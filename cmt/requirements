@@ -1,0 +1,20 @@
+package myPackage
+
+use captEvent
+use captChanInfo
+use testBase
+use captainPolicy 
+use ROOT * LCG_Interfaces
+
+macro myPackage_linkopts " -L$(MYPACKAGEROOT)/$(myPackage_tag) "
+path_remove LD_LIBRARY_PATH "$(MYPACKAGEROOT)"
+path_prepend LD_LIBRARY_PATH "$(MYPACKAGEROOT)/$(myPackage_tag)"
+path_remove PATH "$(MYPACKAGEROOT)"
+path_prepend PATH "$(MYPACKAGEROOT)/$(myPackage_tag)"
+
+document linkdef linkdef *.hxx *_LinkDef.h
+
+application mySimpleEventLoop ../app/mySimpleEventLoop.cxx
+application runTime ../app/runTime.cxx
+application interactionTime ../app/interactionTimes.cxx
+application trackFinder ../app/trackFinder.cxx
