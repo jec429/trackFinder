@@ -92,7 +92,17 @@ public:
     double tim = chanCalib.GetTimeConstant(pulse->GetChannelId(),1);
     return - off/tim;
   }
-  
+  float calculateSlope(std::vector<std::tuple<double,double,CP::THandle<CP::THit>>> trackSeed){
+    float slope = 0.;
+    for (auto t1:trackSeed) {
+      for (auto t2:trackSeed) {
+	if (std::get<0>(t1) == std::get<0>(t2)) continue;
+	slope += (std::get<1>(t1)-std::get<1>(t2))/(std::get<0>(t1)-std::get<0>(t2));
+      }
+    }
+    slope = slope/(trackSeed.size()*(trackSeed.size()-1));
+    return slope;
+  }
   TTrackFinder():
     first_hit(new wTuple),
     last_hit(new wTuple)
