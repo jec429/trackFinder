@@ -92,7 +92,7 @@ public:
     double tim = chanCalib.GetTimeConstant(pulse->GetChannelId(),1);
     return - off/tim;
   }
-  float calculateSlope(std::vector<std::tuple<double,double,CP::THandle<CP::THit>>> trackSeed){
+  float calculateSlope(std::vector<std::tuple<double,double,double>> trackSeed){
     float slope = 0.;
     for (auto t1:trackSeed) {
       for (auto t2:trackSeed) {
@@ -103,6 +103,20 @@ public:
     slope = slope/(trackSeed.size()*(trackSeed.size()-1));
     return slope;
   }
+
+  std::vector<wTuple> instersection(std::vector<wTuple> &v1, std::vector<wTuple> &v2)
+  {
+    std::vector<wTuple> v3;
+
+    sort(v1.begin(), v1.end());
+    sort(v2.begin(), v2.end());
+
+    set_intersection(v1.begin(),v1.end(),v2.begin(),v2.end(),back_inserter(v3));
+
+    return v3;
+}
+
+  
   TTrackFinder():
     first_hit(new wTuple),
     last_hit(new wTuple)
@@ -111,8 +125,8 @@ public:
     
     hfile= new TFile("tracks.root","RECREATE");
     tree = new TTree("tracks","");
-    tree->Branch("first_hit",first_hit);
-    tree->Branch("last_hit",last_hit);
+    // tree->Branch("first_hit",first_hit);
+    // tree->Branch("last_hit",last_hit);
     tree->Branch("wplane",&wplane);
     tree->Branch("Event",&Event);
 
@@ -299,11 +313,11 @@ public:
 	  nhWires++;
 	}
 	else{
-	  if (nhWires > 20) hotWires.push_back(hotWire);
+	  if (nhWires > 10) hotWires.push_back(hotWire);
 	  nhWires = 0;
 	}     
 	if (w == wiresTimesCharges.back()) {
-	  if (nhWires > 20) hotWires.push_back(hotWire);
+	  if (nhWires > 10) hotWires.push_back(hotWire);
 	}
 	hotWire = std::get<0>(w);
       }
@@ -312,7 +326,8 @@ public:
       std::cout<<"wires="<<wiresTimesCharges.size()<<std::endl;   
       // Veto hot wires
       std::vector<int> hitsToVeto;
-      for (auto hw:hotWires) {
+      for (auto hw:hotWires) {	
+	std::cout<<"HW="<<hw<<std::endl;      
 	for (unsigned int i = 0; i < trackSeeds.size(); i++) {
 	  if (hw == std::get<0>(trackSeeds[i][0])) {
 	    hitsToVeto.push_back(i);
@@ -326,21 +341,23 @@ public:
 	trackSeeds.erase(trackSeeds.begin() + i);
 	wiresTimesCharges.erase(wiresTimesCharges.begin() + i);
       }
-      std::cout<<"track seeds="<<trackSeeds.size()<<std::endl;
+      std::cout<<"Track seeds="<<trackSeeds.size()<<std::endl;
         
       for (unsigned int i = 0; i < trackSeeds.size(); i++) {
+	//std::cout<<"tseed="<<std::get<0>(trackSeeds[i][0])<<std::endl;
 	for (unsigned int k = 0; k < trackSeeds[i].size(); k++) {	
-	  for (int j = wiresTimesCharges.size() -1; j  >= 0; j--) {	  
+	  for (int j = wiresTimesCharges.size() -1; j  >= 0; j--) {	    
 	    double deltaW = fabs(std::get<0>(trackSeeds[i][k])-std::get<0>(wiresTimesCharges[j]));
 	    double deltaT = fabs(std::get<1>(trackSeeds[i][k])-std::get<1>(wiresTimesCharges[j]));
 	    //std::cout<<"Deltas="<<deltaW<<" "<<deltaT<<std::endl;
-	    if ((deltaW !=0 && deltaT != 0) && deltaW < 6 && deltaT < 50) {
+	    if ((deltaW !=0 && deltaT != 0) && deltaW < 10 && deltaT < 50) {
 	      trackSeeds[i].push_back(wiresTimesCharges[j]);
 	      wiresTimesCharges.erase(wiresTimesCharges.begin() + j);
 	    }	  
 	  }	
 	}
       }
+      std::vector<std::vector<wTuple>> pretracks;
       std::cout<<"pruned seeds="<<trackSeeds.size()<<std::endl;
       for (auto ts:trackSeeds) {
 	// std::cout<<"track seed size="<<ts.size()<<std::endl;
@@ -349,12 +366,50 @@ public:
 	//     std::cout<<"wires="<<std::get<0>(t)<<std::endl;
 	// }
 	if (ts.size() > 10) {
-	  tracks.push_back(ts);
+	  pretracks.push_back(ts);
 	  nTracks++;
 	}
       }
-        
-      std::cout<<"ntracks = "<<nTracks<<std::endl;
+
+      std::vector<int> used_tracks;
+      for (int i = 0; i< pretracks.size(); i++) {
+	std::vector<wTuple> t1 = pretracks[i];
+	float slope1 = calculateSlope(t1);
+	bool used = false;
+	for (auto k:used_tracks){
+	  if (k==i) used = true;
+	}
+	if (used) continue;
+	for (int j = i+1; j < pretracks.size(); j++) {
+	  std::vector<wTuple> t2 = pretracks[j];
+	  float slope2 = calculateSlope(t2);
+	  if (fabs(slope1-slope2)<0.1 ){
+	    std::vector<wTuple> t12;
+	    t12.reserve( t1.size() + t2.size() ); // preallocate memory
+	    t12.insert( t12.end(), t1.begin(), t1.end() );
+	    t12.insert( t12.end(), t2.begin(), t2.end() );
+	    tracks.push_back(t12);
+	    used_tracks.push_back(j);
+	  }
+	  else
+	    tracks.push_back(t1);
+	}
+      }
+
+      for (int i = 0; i< tracks.size(); i++) {
+	std::vector<wTuple> t1 = tracks[i];
+	for (int j = i+1; j < tracks.size(); j++) {
+	  std::vector<wTuple> t2 = tracks[j];
+	  auto t3 = instersection(t1, t2);	  
+	  for(wTuple n : t3)
+	    std::cout << "test="<<std::get<0>(n) << ' ';	  
+	}
+      }
+      
+      if (pretracks.size() == 1) tracks.push_back(pretracks[0]);
+      
+      std::cout<<"npretracks = "<<pretracks.size()<<std::endl;
+      std::cout<<"ntracks = "<<tracks.size()<<std::endl;
       int ntr = 0;
       for (auto ts: tracks) {
 	std::cout<<"New track"<<std::endl;
@@ -369,6 +424,8 @@ public:
 
 	wTuple firstHit;
 	wTuple lastHit;
+
+	std::cout<<"Slope="<<calculateSlope(ts)<<std::endl;
       
 	for (auto t1:ts) {
 	  for (auto t2:ts) {
@@ -384,7 +441,7 @@ public:
 	}
 	std::cout<<"EDGES="<<std::get<1>(firstHit)<<","<<std::get<0>(firstHit)<<" "<<std::get<1>(lastHit)<<","<<std::get<0>(lastHit)<<std::endl;
 	trackEdges[plane].push_back(make_tuple(firstHit,lastHit,plane));
-      }        
+      }
       std::cout<<"=============================================="<<std::endl;
     }
 

@@ -1,4 +1,4 @@
-package myPackage
+package trackFinder
 
 use captEvent
 use captChanInfo
@@ -6,11 +6,11 @@ use testBase
 use captainPolicy 
 use ROOT * LCG_Interfaces
 
-macro myPackage_linkopts " -L$(MYPACKAGEROOT)/$(myPackage_tag) "
-path_remove LD_LIBRARY_PATH "$(MYPACKAGEROOT)"
-path_prepend LD_LIBRARY_PATH "$(MYPACKAGEROOT)/$(myPackage_tag)"
-path_remove PATH "$(MYPACKAGEROOT)"
-path_prepend PATH "$(MYPACKAGEROOT)/$(myPackage_tag)"
+macro trackFinder_linkopts " -L$(TRACKFINDERROOT)/$(trackFinder_tag) "
+path_remove LD_LIBRARY_PATH "$(TRACKFINDERROOT)"
+path_prepend LD_LIBRARY_PATH "$(TRACKFINDERROOT)/$(trackFinder_tag)"
+path_remove PATH "$(TRACKFINDERROOT)"
+path_prepend PATH "$(TRACKFINDERROOT)/$(trackFinder_tag)"
 
 document linkdef linkdef *.hxx *_LinkDef.h
 
