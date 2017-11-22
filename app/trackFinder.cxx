@@ -114,10 +114,15 @@ public:
   }
  
   TTrackFinder()
-    //first_hit(new std::vector),
-    //last_hit(new wTuple)
   {
     fBeam = false;
+
+    first_hit_X.clear();
+    first_hit_V.clear();
+    first_hit_U.clear();
+    last_hit_X.clear();
+    last_hit_V.clear();
+    last_hit_U.clear();
     
     hfile= new TFile("tracks.root","RECREATE");
     tree = new TTree("tracks","");
@@ -373,6 +378,7 @@ public:
 	}
       }
 
+      // Combine tracks by matching slopes
       std::vector<int> used_tracks;
       for (unsigned int i = 0; i< pretracks.size(); i++) {
 	std::vector<wTuple> t1 = pretracks[i];
@@ -385,7 +391,7 @@ public:
 	for (unsigned int j = i+1; j < pretracks.size(); j++) {
 	  std::vector<wTuple> t2 = pretracks[j];
 	  float slope2 = calculateSlope(t2);
-	  if (fabs(slope1-slope2)<0.1 ){
+	  if ( fabs(slope1-slope2)<0.1 ){
 	    std::vector<wTuple> t12;
 	    t12.reserve( t1.size() + t2.size() ); // preallocate memory
 	    t12.insert( t12.end(), t1.begin(), t1.end() );
@@ -488,7 +494,7 @@ public:
 	  lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
 	}
       }
-
+           
       if (match==3){
 	std::cout<<"match time="<<std::get<1>(std::get<0>(tsx))<<std::endl;
 	nMatches++;
@@ -508,6 +514,13 @@ public:
     std::cout<<"=============================================="<<std::endl;
     std::cout<<"=============================================="<<std::endl;
 
+    first_hit_X.clear();
+    first_hit_V.clear();
+    first_hit_U.clear();
+    last_hit_X.clear();
+    last_hit_V.clear();
+    last_hit_U.clear();  
+    
     return true;
   }
 
