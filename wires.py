@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
 
+import ROOT
+
 ###############################################################################
 # features to toggle
 ###############################################################################
@@ -403,6 +405,25 @@ lw = []
 
 subevent = []
 
+# Read from ROOT file
+f = ROOT.TFile("tracks.root")
+t = ROOT.TTree()
+f.GetObject("tracks",t)
+
+ev = 1
+for e in t:
+    for i in xrange(0,e.nmatches):
+        ew.append([int(e.first_hit_X[i]),int(e.first_hit_U[i]),int(e.first_hit_V[i])])
+        lw.append([int(e.last_hit_X[i]),int(e.last_hit_U[i]),int(e.last_hit_V[i])])
+        subev = '%d.%d' %(e.Event,i)
+        subevent.append(float(subev))
+
+print ew
+print lw
+print subevent
+
+# times needed?
+    
 # check
 """
 et = [[0,150,300], [0,150,300]]
@@ -528,7 +549,7 @@ lw.append([])
 subevent.append()
 """
 
-
+"""
 # Jorge's listed subevents (with made-up times)
 ew = [[184,156,150], [78,181,241], [224,134,134], [318,95,67]]
 et = [[0,0,0],       [0,0,0],      [0,0,0],       [0,0,0]]
@@ -537,6 +558,7 @@ lw = [[104,178,216], [49,198,255], [267,129,102], [303,80,102]]
 lt = [[375,375,375], [375,375,375],[375,375,375], [375,375,375]]
 
 subevent = [5,6,7,11]
+"""
 """
 # my attempted matches of Jorge's listed subevents (slightly different?)
 et.append([813.213,826.996,827.613])
