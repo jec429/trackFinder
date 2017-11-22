@@ -35,7 +35,7 @@
 typedef std::tuple<double,double,double> wTuple;
 
 #ifdef __CINT__
-#pragma link C++ class wTuple+;
+#pragma link C++ class vector+;
 #endif
 
 
@@ -107,27 +107,27 @@ public:
   std::vector<wTuple> instersection(std::vector<wTuple> &v1, std::vector<wTuple> &v2)
   {
     std::vector<wTuple> v3;
-
     sort(v1.begin(), v1.end());
     sort(v2.begin(), v2.end());
-
     set_intersection(v1.begin(),v1.end(),v2.begin(),v2.end(),back_inserter(v3));
-
     return v3;
-}
-
-  
-  TTrackFinder():
-    first_hit(new wTuple),
-    last_hit(new wTuple)
+  }
+ 
+  TTrackFinder()
+    //first_hit(new std::vector),
+    //last_hit(new wTuple)
   {
     fBeam = false;
     
     hfile= new TFile("tracks.root","RECREATE");
     tree = new TTree("tracks","");
-    // tree->Branch("first_hit",first_hit);
-    // tree->Branch("last_hit",last_hit);
-    tree->Branch("wplane",&wplane);
+    tree->Branch("first_hit_X",&first_hit_X);
+    tree->Branch("last_hit_X",&last_hit_X);
+    tree->Branch("first_hit_V",&first_hit_V);
+    tree->Branch("last_hit_V",&last_hit_V);
+    tree->Branch("first_hit_U",&first_hit_U);
+    tree->Branch("last_hit_U",&last_hit_U);
+    tree->Branch("nmatches",&nmatches);
     tree->Branch("Event",&Event);
 
   }
@@ -158,6 +158,8 @@ public:
 	     << "." << event.GetContext().GetEvent() << std::endl;
     std::cout<<"=============================================="<<std::endl;
 
+    Event = event.GetContext().GetEvent();
+    
     //int plane = 0;
     std::map<int,std::string> planes;
     planes[0] = "X";
@@ -372,7 +374,7 @@ public:
       }
 
       std::vector<int> used_tracks;
-      for (int i = 0; i< pretracks.size(); i++) {
+      for (unsigned int i = 0; i< pretracks.size(); i++) {
 	std::vector<wTuple> t1 = pretracks[i];
 	float slope1 = calculateSlope(t1);
 	bool used = false;
@@ -380,7 +382,7 @@ public:
 	  if (k==i) used = true;
 	}
 	if (used) continue;
-	for (int j = i+1; j < pretracks.size(); j++) {
+	for (unsigned int j = i+1; j < pretracks.size(); j++) {
 	  std::vector<wTuple> t2 = pretracks[j];
 	  float slope2 = calculateSlope(t2);
 	  if (fabs(slope1-slope2)<0.1 ){
@@ -396,13 +398,13 @@ public:
 	}
       }
 
-      for (int i = 0; i< tracks.size(); i++) {
+      for (unsigned int i = 0; i< tracks.size(); i++) {
 	std::vector<wTuple> t1 = tracks[i];
-	for (int j = i+1; j < tracks.size(); j++) {
+	for (unsigned int j = i+1; j < tracks.size(); j++) {
 	  std::vector<wTuple> t2 = tracks[j];
-	  auto t3 = instersection(t1, t2);	  
-	  for(wTuple n : t3)
-	    std::cout << "test="<<std::get<0>(n) << ' ';	  
+	  if (instersection(t1, t2).size() > 0 ) {
+	    
+	  }
 	}
       }
       
@@ -464,23 +466,42 @@ public:
     }
 
     int nMatches = 0;
+    double fhx,fhv,fhu;
+    double lhx,lhv,lhu;
     for (auto tsx:trackEdges[0]) {
       int match = 1;
-      for (auto tsv:trackEdges[1]) {
-	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < 50 )
+
+      fhx = std::get<0>(std::get<0>(tsx)); // first hit X plane
+      lhx = std::get<0>(std::get<1>(tsx)); // last hit X plane
+
+      for (auto tsv:trackEdges[1]) {	
+	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < 50 ) {
 	  match++;
+	  fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
+	  lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
+	}
       }
       for (auto tsu:trackEdges[2]) {
-	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < 50 )
-	  match++;	
+	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < 50 ) {
+	  match++;
+	  fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
+	  lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
+	}
       }
 
       if (match==3){
 	std::cout<<"match time="<<std::get<1>(std::get<0>(tsx))<<std::endl;
 	nMatches++;
+	first_hit_X.push_back(fhx);
+	first_hit_V.push_back(fhv);
+	first_hit_U.push_back(fhu);
+	last_hit_X.push_back(lhx);
+	last_hit_V.push_back(lhv);
+	last_hit_U.push_back(lhu);
       }
     }
-
+    nmatches = nMatches;
+    tree->Fill();
     tracks3D->Fill(nMatches);
     std::cout<<"nMatches="<<nMatches<<std::endl;
 
@@ -495,7 +516,7 @@ public:
   void Finalize(CP::TRootOutput * const output) {
     tracks3D->Draw();
     gPad->Print("XUV_tracks.root");
-    //hfile->Write();
+    hfile->Write();
   }
 private:
   bool fBeam;
@@ -504,10 +525,14 @@ private:
 
   TFile* hfile;
   TTree* tree;
-  Int_t wplane;
+  Int_t nmatches;
   Int_t Event;
-  wTuple * first_hit;
-  wTuple * last_hit;
+  std::vector<double> first_hit_X;
+  std::vector<double> last_hit_X;
+  std::vector<double> first_hit_V;
+  std::vector<double> last_hit_V;
+  std::vector<double> first_hit_U;
+  std::vector<double> last_hit_U;
   
 };
 int main(int argc, char **argv) {
