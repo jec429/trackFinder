@@ -38,6 +38,7 @@ typedef std::tuple<double,double,double> wTuple;
 #pragma link C++ class vector+;
 #endif
 
+#define VERBOSE
 
 class TTrackFinder: public CP::TEventLoopFunction {
 public:
@@ -92,7 +93,7 @@ public:
     double tim = chanCalib.GetTimeConstant(pulse->GetChannelId(),1);
     return - off/tim;
   }
-  float calculateSlope(std::vector<std::tuple<double,double,double>> trackSeed){
+  float calculateSlope(std::vector<std::tuple<double,double,double>> trackSeed) {
     float slope = 0.;
     for (auto t1:trackSeed) {
       for (auto t2:trackSeed) {
@@ -104,15 +105,23 @@ public:
     return slope;
   }
 
-  std::vector<wTuple> instersection(std::vector<wTuple> &v1, std::vector<wTuple> &v2)
-  {
+  std::vector<wTuple> instersection(std::vector<wTuple> &v1, std::vector<wTuple> &v2) {
     std::vector<wTuple> v3;
     sort(v1.begin(), v1.end());
     sort(v2.begin(), v2.end());
     set_intersection(v1.begin(),v1.end(),v2.begin(),v2.end(),back_inserter(v3));
     return v3;
   }
- 
+
+
+  std::vector<wTuple> combineTuples(std::vector<wTuple> &t1, std::vector<wTuple> &t2) {
+    std::vector<wTuple> t12;
+    t12.reserve( t1.size() + t2.size() ); // preallocate memory
+    t12.insert( t12.end(), t1.begin(), t1.end() );
+    t12.insert( t12.end(), t2.begin(), t2.end() );
+    return t12;
+  }
+	    
   TTrackFinder()
   {
     fBeam = false;
@@ -158,11 +167,12 @@ public:
     CP::TChannelInfo::Get().SetContext(event.GetContext());
     CP::THandle<CP::TDigitContainer> drift = event.Get<CP::TDigitContainer>("~/digits/drift");
 
+#ifdef VERBOSE
     std::cout<<"=============================================="<<std::endl;
     std::cout<< "Event " << event.GetContext().GetRun()
 	     << "." << event.GetContext().GetEvent() << std::endl;
     std::cout<<"=============================================="<<std::endl;
-
+#endif
     Event = event.GetContext().GetEvent();
     
     //int plane = 0;
@@ -329,12 +339,16 @@ public:
 	hotWire = std::get<0>(w);
       }
       int nTracks = 0;
+#ifdef VERBOSE
       std::cout<<"Plane "<<planes[plane]<<std::endl;
-      std::cout<<"wires="<<wiresTimesCharges.size()<<std::endl;   
+      std::cout<<"wires="<<wiresTimesCharges.size()<<std::endl;
+#endif
       // Veto hot wires
       std::vector<int> hitsToVeto;
-      for (auto hw:hotWires) {	
+      for (auto hw:hotWires) {
+#ifdef VERBOSE
 	std::cout<<"HW="<<hw<<std::endl;      
+#endif
 	for (unsigned int i = 0; i < trackSeeds.size(); i++) {
 	  if (hw == std::get<0>(trackSeeds[i][0])) {
 	    hitsToVeto.push_back(i);
@@ -348,8 +362,9 @@ public:
 	trackSeeds.erase(trackSeeds.begin() + i);
 	wiresTimesCharges.erase(wiresTimesCharges.begin() + i);
       }
+#ifdef VERBOSE
       std::cout<<"Track seeds="<<trackSeeds.size()<<std::endl;
-        
+#endif
       for (unsigned int i = 0; i < trackSeeds.size(); i++) {
 	//std::cout<<"tseed="<<std::get<0>(trackSeeds[i][0])<<std::endl;
 	for (unsigned int k = 0; k < trackSeeds[i].size(); k++) {	
@@ -365,7 +380,9 @@ public:
 	}
       }
       std::vector<std::vector<wTuple>> pretracks;
+#ifdef VERBOSE
       std::cout<<"pruned seeds="<<trackSeeds.size()<<std::endl;
+#endif
       for (auto ts:trackSeeds) {
 	// std::cout<<"track seed size="<<ts.size()<<std::endl;
 	// if (ts.size() > 1) {
@@ -379,51 +396,61 @@ public:
       }
 
       // Combine tracks by matching slopes
-      std::vector<int> used_tracks;
+      std::vector<std::pair<int,int>> matched_tracks;
+      
       for (unsigned int i = 0; i< pretracks.size(); i++) {
 	std::vector<wTuple> t1 = pretracks[i];
 	float slope1 = calculateSlope(t1);
-	bool used = false;
-	for (auto k:used_tracks){
-	  if (k==i) used = true;
-	}
-	if (used) continue;
-	for (unsigned int j = i+1; j < pretracks.size(); j++) {
+	for (unsigned int j = i; j < pretracks.size(); j++) {
 	  std::vector<wTuple> t2 = pretracks[j];
 	  float slope2 = calculateSlope(t2);
-	  if ( fabs(slope1-slope2)<0.1 ){
-	    std::vector<wTuple> t12;
-	    t12.reserve( t1.size() + t2.size() ); // preallocate memory
-	    t12.insert( t12.end(), t1.begin(), t1.end() );
-	    t12.insert( t12.end(), t2.begin(), t2.end() );
-	    tracks.push_back(t12);
-	    used_tracks.push_back(j);
+	  if ( fabs(slope1-slope2)<0.1 ){	    
+	    matched_tracks.push_back(std::make_pair(i,j));
+#ifdef VERBOSE
+	    std::cout<<"Match"<<std::endl;
+#endif
 	  }
-	  else
-	    tracks.push_back(t1);
 	}
       }
 
-      for (unsigned int i = 0; i< tracks.size(); i++) {
-	std::vector<wTuple> t1 = tracks[i];
-	for (unsigned int j = i+1; j < tracks.size(); j++) {
-	  std::vector<wTuple> t2 = tracks[j];
-	  if (instersection(t1, t2).size() > 0 ) {
-	    
-	  }
+      //      for (unsigned int i=0; i<pretrack.size(); i++) {
+
+      std::vector<int> matched_remove;
+      for ( auto p: matched_tracks) {
+	
+	if (p.first != p.second) {
+#ifdef VERBOSE
+	    std::cout<<"Pairs="<<p.first<<","<<p.second<<std::endl;
+#endif
+	    matched_remove.push_back(p.first);
+	    matched_remove.push_back(p.second);
 	}
       }
-      
-      if (pretracks.size() == 1) tracks.push_back(pretracks[0]);
-      
+
+      for ( auto p: matched_remove) {
+#ifdef VERBOSE
+	std::cout<<"remove="<<p<<std::endl;
+#endif
+	matched_tracks.erase(std::remove(matched_tracks.begin(), matched_tracks.end(), std::make_pair(p,p)), matched_tracks.end());
+      }
+      for ( auto p: matched_tracks) {
+#ifdef VERBOSE
+	std::cout<<"finalw="<<p.first<<" "<<p.second<<std::endl;
+#endif
+	if (p.first == p.second) tracks.push_back(pretracks[p.first]);
+	else tracks.push_back(combineTuples(pretracks[p.first],pretracks[p.second]));
+	
+      }      
+#ifdef VERBOSE
       std::cout<<"npretracks = "<<pretracks.size()<<std::endl;
       std::cout<<"ntracks = "<<tracks.size()<<std::endl;
+#endif
       int ntr = 0;
       for (auto ts: tracks) {
+#ifdef VERBOSE
 	std::cout<<"New track"<<std::endl;
+#endif
 	ntr++;
-	bool split = false;
-	bool shower = false;
 
 	double wMax = 0.0; 
 	double tMax = -9999.0; 
@@ -433,31 +460,37 @@ public:
 	wTuple firstHit;
 	wTuple lastHit;
 
+#ifdef VERBOSE
 	std::cout<<"Slope="<<calculateSlope(ts)<<std::endl;
-      
+#endif      
 	for (auto t1:ts) {
-	  for (auto t2:ts) {
-	    if (fabs(std::get<0>(t1) - std::get<0>(t2)) < 3 && fabs(std::get<1>(t1) - std::get<1>(t2)) > 50) {
-	      split = true;
-	    }	  
-	  }	
+	  //for (auto t2:ts) {
+	    //if (fabs(std::get<0>(t1) - std::get<0>(t2)) < 3 && fabs(std::get<1>(t1) - std::get<1>(t2)) > 50) {
+	      //split = true;
+	    //}	  
+	    //}	
 	  //std::cout<<"Hits="<<std::get<0>(t1)<<" "<<std::get<1>(t1)<<std::endl;
 	  if (std::get<0>(t1) > wMax) wMax = std::get<0>(t1);
 	  if (std::get<1>(t1) > tMax) {tMax = std::get<1>(t1); lastHit = t1;};
 	  if (std::get<0>(t1) < wMin) wMin = std::get<0>(t1);
 	  if (std::get<1>(t1) < tMin) {tMin = std::get<1>(t1); firstHit = t1;};		
 	}
+#ifdef VERBOSE
 	std::cout<<"EDGES="<<std::get<1>(firstHit)<<","<<std::get<0>(firstHit)<<" "<<std::get<1>(lastHit)<<","<<std::get<0>(lastHit)<<std::endl;
+#endif	
 	trackEdges[plane].push_back(make_tuple(firstHit,lastHit,plane));
       }
+#ifdef VERBOSE
       std::cout<<"=============================================="<<std::endl;
+#endif
     }
 
 
     std::sort(trackEdges[0].begin(), trackEdges[0].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
     std::sort(trackEdges[1].begin(), trackEdges[1].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
     std::sort(trackEdges[2].begin(), trackEdges[2].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
-    
+
+#ifdef VERBOSE
     for (auto ts:trackEdges[0]) {
       std::cout<<"T="<<std::get<1>(std::get<0>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
       std::cout<<"W1="<<std::get<0>(std::get<0>(ts))<<" "<<std::get<0>(std::get<1>(ts))<<std::endl;
@@ -470,6 +503,7 @@ public:
       std::cout<<"T="<<std::get<1>(std::get<0>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
       std::cout<<"W1="<<std::get<0>(std::get<0>(ts))<<" "<<std::get<0>(std::get<1>(ts))<<std::endl;
     }
+#endif
 
     int nMatches = 0;
     double fhx,fhv,fhu;
@@ -495,8 +529,10 @@ public:
 	}
       }
            
-      if (match==3){
+      if (match==3){	
+#ifdef VERBOSE
 	std::cout<<"match time="<<std::get<1>(std::get<0>(tsx))<<std::endl;
+#endif
 	nMatches++;
 	first_hit_X.push_back(fhx);
 	first_hit_V.push_back(fhv);
@@ -509,11 +545,12 @@ public:
     nmatches = nMatches;
     tree->Fill();
     tracks3D->Fill(nMatches);
+#ifdef VERBOSE
     std::cout<<"nMatches="<<nMatches<<std::endl;
 
     std::cout<<"=============================================="<<std::endl;
     std::cout<<"=============================================="<<std::endl;
-
+#endif
     first_hit_X.clear();
     first_hit_V.clear();
     first_hit_U.clear();
