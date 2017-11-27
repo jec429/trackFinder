@@ -38,7 +38,7 @@ typedef std::tuple<double,double,double> wTuple;
 #pragma link C++ class vector+;
 #endif
 
-#define VERBOSE
+//#define VERBOSE
 
 class TTrackFinder: public CP::TEventLoopFunction {
 public:
@@ -132,6 +132,8 @@ public:
     last_hit_X.clear();
     last_hit_V.clear();
     last_hit_U.clear();
+
+    beam.clear();
     
     hfile= new TFile("tracks.root","RECREATE");
     tree = new TTree("tracks","");
@@ -143,6 +145,7 @@ public:
     tree->Branch("last_hit_U",&last_hit_U);
     tree->Branch("nmatches",&nmatches);
     tree->Branch("Event",&Event);
+    tree->Branch("beam",&beam);
 
   }
   virtual ~TTrackFinder() {}
@@ -528,7 +531,7 @@ public:
 	  lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
 	}
       }
-           
+      
       if (match==3){	
 #ifdef VERBOSE
 	std::cout<<"match time="<<std::get<1>(std::get<0>(tsx))<<std::endl;
@@ -540,6 +543,12 @@ public:
 	last_hit_X.push_back(lhx);
 	last_hit_V.push_back(lhv);
 	last_hit_U.push_back(lhu);
+
+	if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
+	  beam.push_back(true);
+	else
+	  beam.push_back(false);
+	
       }
     }
     nmatches = nMatches;
@@ -556,7 +565,8 @@ public:
     first_hit_U.clear();
     last_hit_X.clear();
     last_hit_V.clear();
-    last_hit_U.clear();  
+    last_hit_U.clear();
+    beam.clear();
     
     return true;
   }
@@ -577,6 +587,8 @@ private:
   TTree* tree;
   Int_t nmatches;
   Int_t Event;
+  
+  std::vector<bool> beam;
   std::vector<double> first_hit_X;
   std::vector<double> last_hit_X;
   std::vector<double> first_hit_V;
