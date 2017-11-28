@@ -38,7 +38,7 @@ typedef std::tuple<double,double,double> wTuple;
 #pragma link C++ class vector+;
 #endif
 
-//#define VERBOSE
+#define VERBOSE
 
 class TTrackFinder: public CP::TEventLoopFunction {
 public:
@@ -375,7 +375,7 @@ public:
 	    double deltaW = fabs(std::get<0>(trackSeeds[i][k])-std::get<0>(wiresTimesCharges[j]));
 	    double deltaT = fabs(std::get<1>(trackSeeds[i][k])-std::get<1>(wiresTimesCharges[j]));
 	    //std::cout<<"Deltas="<<deltaW<<" "<<deltaT<<std::endl;
-	    if ((deltaW !=0 && deltaT != 0) && deltaW < 10 && deltaT < 50) {
+	    if ((deltaW !=0 && deltaT != 0) && deltaW < 10 && deltaT < 60) {
 	      trackSeeds[i].push_back(wiresTimesCharges[j]);
 	      wiresTimesCharges.erase(wiresTimesCharges.begin() + j);
 	    }	  
@@ -390,7 +390,7 @@ public:
 	// std::cout<<"track seed size="<<ts.size()<<std::endl;
 	// if (ts.size() > 1) {
 	//   for(auto t:ts)
-	//     std::cout<<"wires="<<std::get<0>(t)<<std::endl;
+	//     std::cout<<"wires="<<std::get<0>(t)<<" "<< std::get<1>(t)<<std::endl;
 	// }
 	if (ts.size() > 10) {
 	  pretracks.push_back(ts);
@@ -496,14 +496,17 @@ public:
 #ifdef VERBOSE
     for (auto ts:trackEdges[0]) {
       std::cout<<"T="<<std::get<1>(std::get<0>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
+      std::cout<<"T="<<std::get<1>(std::get<1>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
       std::cout<<"W1="<<std::get<0>(std::get<0>(ts))<<" "<<std::get<0>(std::get<1>(ts))<<std::endl;
     }
     for (auto ts:trackEdges[1]) {
       std::cout<<"T="<<std::get<1>(std::get<0>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
+      std::cout<<"T="<<std::get<1>(std::get<1>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
       std::cout<<"W1="<<std::get<0>(std::get<0>(ts))<<" "<<std::get<0>(std::get<1>(ts))<<std::endl;
     }
     for (auto ts:trackEdges[2]) {
       std::cout<<"T="<<std::get<1>(std::get<0>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
+      std::cout<<"T="<<std::get<1>(std::get<1>(ts))<<" "<<planes[std::get<2>(ts)]<<std::endl;
       std::cout<<"W1="<<std::get<0>(std::get<0>(ts))<<" "<<std::get<0>(std::get<1>(ts))<<std::endl;
     }
 #endif
@@ -517,22 +520,35 @@ public:
       fhx = std::get<0>(std::get<0>(tsx)); // first hit X plane
       lhx = std::get<0>(std::get<1>(tsx)); // last hit X plane
 
+      double delta_xv_f = 100;
+      double delta_xv_l = 100;
+      double delta_xu_f = 100;
+      double delta_xu_l = 100;
+      
       for (auto tsv:trackEdges[1]) {	
-	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < 50 ) {
+	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < delta_xv_f ||
+	     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l
+	     ) {
+	  delta_xv_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv)));
+	  delta_xv_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv)));
 	  match++;
 	  fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
 	  lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
 	}
       }
       for (auto tsu:trackEdges[2]) {
-	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < 50 ) {
+	if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < delta_xu_f ||
+	     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu))) < delta_xu_l
+	     ) {
+	  delta_xu_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu)));
+	  delta_xu_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu)));
 	  match++;
 	  fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
 	  lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
 	}
       }
       
-      if (match==3){	
+      if (match>2){	
 #ifdef VERBOSE
 	std::cout<<"match time="<<std::get<1>(std::get<0>(tsx))<<std::endl;
 #endif
