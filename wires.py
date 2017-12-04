@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Nov  2 14:08:34 2017
+Created on Thu Nov 30 13:21:32 2017
 
 @author: Shannon Glavin - sglavin@sas.upenn.edu (Python 3.4)
 
 Description:
 copied & working off of wire.py created by Jorge Chaves
-newest change: fixed wire coords yet again
+newest change: slimmed down unused things + prepping for fixed coordinates
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import numpy as np
 import math
 
 import ROOT
@@ -18,11 +19,12 @@ import ROOT
 ###############################################################################
 # features to toggle
 ###############################################################################
-plotaxis = 1    #shows axis on hexagon
-printstuff = 0  #prints out some info I was curious about at times while writing
+plotaxis = 0    #shows axis on hexagon
+plotEach = 1
 
 mapintersection = 1 #0=no shading, 1=shade area between 3 wires
-hotshading = 0.1   #alpha of shading
+hotshading = 0.05   #alpha of shading
+badarealimit = 50000000
 
 ###############################################################################
 # constants & geometry
@@ -51,42 +53,7 @@ midcolor = '#%02x%02x%02x' % midcolor
 # functions
 ###############################################################################
 
-def getColor(time, t_e):
-    t_min = min(t_e)
-    t_max = t_min + 375
-    t = (time - t_min)/(t_max - t_min)
-    n_colors = 4
-    if t > 2/(n_colors - 1):
-        c_t = int((n_colors - 1) * (t - 2/(n_colors - 1)) * 255)
-        color = (c_t, 0, 255)
-    elif t > 1/(n_colors - 1):
-        c_t = int((n_colors - 1) * (t - 1/(n_colors - 1)) * 255)
-        color = (0, 255 - c_t, 255)
-    else:
-        c_t = int((n_colors - 1) * t * 255)
-        color = (0, 255, c_t)
-    color = '#%02x%02x%02x' % color
-    return color
-
 ############################################################ plotting funtcions
-"""
-#currently unused
-def plotPolygon():
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111, aspect='equal')
-    ax1.add_patch(
-        patches.RegularPolygon(
-            (0, 0),      # (x,y)
-            6,           # number of vertices
-            radius,      # radius
-            fill = False
-        )
-    )
-    ax1.set_xlim(-200,200)
-    ax1.set_ylim(-200,200)
-    if plotaxis == 1: plotAxis()
-"""
-#
 
 def plotAxis():
     color = (200, 200, 200)
@@ -103,7 +70,7 @@ def plotMPs(mp_e, mp_l):
 
 #
 
-def plotAllMPs(allmps, allints):
+def plotAllRegions(allmps, allints_all, prefix):
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(111, aspect='equal')
     ax1.add_patch(
@@ -119,45 +86,21 @@ def plotAllMPs(allmps, allints):
     if plotaxis == 1: plotAxis()
     allmps_e = allmps[0]
     allmps_l = allmps[1]
-    allints_e = allints[0]
-    allints_l = allints[1]
-    for aa in range(len(subevent)):
+    for aa in range(len(allmps_e)):
         mp_e = allmps_e[aa]
         mp_l = allmps_l[aa]
-        ints_e = allints_e[aa]
-        ints_l = allints_l[aa]
+        ints_all = allints_all[aa]
         
         if mapintersection == 1:
             ax1 = fig1.add_subplot(111, aspect='equal')
-            ax1.add_patch(patches.Polygon(ints_e, color=startcolor, alpha=hotshading, lw=0))
-            ax1.add_patch(patches.Polygon(ints_l, color=endcolor, alpha=hotshading, lw=0))
+            ax1.add_patch(patches.Polygon(ints_all, color=midcolor, alpha=hotshading, lw=0))
             ax1.set_xlim(-200,200)
             ax1.set_ylim(-200,200)
         
-        plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], midcolor, ls='-')
-        plotMPs(mp_e, mp_l)
-    plt.savefig('midpoints.pdf', bbox_inches='tight')
+#        plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], midcolor, ls='-')
+#        plotMPs(mp_e, mp_l)
+    plt.savefig(prefix+'midpoints.pdf', bbox_inches='tight')
 
-
-#
-"""
-#unused
-def plotIntersections(xx, uu, vv):
-    i_ = getIntersectionUV(uu, vv)
-    i_x = i_[0]
-    i_y = i_[1]
-    plt.plot(i_x, i_y, 'black', marker='.')
-    
-    i_ = getIntersectionX(xx, uu)
-    i_x = i_[0]
-    i_y = i_[1]
-    plt.plot(i_x, i_y, 'black', marker='.')
-
-    i_ = getIntersectionX(xx, vv)
-    i_x = i_[0]
-    i_y = i_[1]
-    plt.plot(i_x, i_y, 'black', marker='.')
-"""
 ################################################################### find values
 
 def getWireCoords(wireplane, w_):
@@ -180,8 +123,8 @@ def getWireCoords(wireplane, w_):
         x = radius * c_pi6
         x1 = x
         x2 = -1 * x
-        y1 = wirenum - 85
-        y2 = wirenum - 255
+        y1 = wirenum - 255
+        y2 = wirenum - 85
         #v is sign difference from u
         if wireplane == 2:
             y1 = -1 * y1
@@ -266,49 +209,83 @@ def getAllIntersections(lines_):
     i_XV = getIntersectionX(xlines, vlines)
     return [i_UV, i_XU, i_XV]
 
-################################################################### prints outs
+######################################################## unsorted new functions
 
-def printOutInfo(wireplane, w_, xx, yy):
-    wirenum = w_[wireplane]
-    if wireplane == 0:
-        plane = "X"
-    elif wireplane == 1:
-        plane = "U"
-    elif wireplane == 2:
-        plane = "V"
-    x1 = xx[0]
-    x2 = xx[1]
-    y1 = yy[0]
-    y2 = yy[1]
-    intersect = getAxisIntersection(wireplane, xx, yy)
-    i_x = intersect[0]
-    i_y = intersect[1]
-    dist = intersect[2]
-#    plt.plot(i_x, i_y, 'r*')
-    print(plane + "\t" + str(wirenum) + "\t" + str(round(x1,2)) + "\t" + str(round(x2,2)) + "\t" + str(round(y1,2)) + "\t" + str(round(y2,2)) + "\t" + str(round(i_x,2)) + "\t" + str(round(i_y,2)) + "\t" + str(round(dist,2)))
+def combineAllPoints(ints_e, ints_l):
+    ints_all = []
+    for aa in range(3):
+        p1 = ints_e[aa]
+        p1_x = p1[0]
+        p1_y = p1[1]
+        pp1 = (p1_x, p1_y)
+        ints_all.append(pp1)
+        p2 = ints_l[aa]
+        p2_x = p2[0]
+        p2_y = p2[1]
+        pp2 = (p2_x, p2_y)
+        ints_all.append(pp2)
+    return ints_all
 
 #
 
-def doChecks(t_e, t_l, se):
-    #how color code?
-    t_min = min(t_e)
-    t_max = max(t_l)
-    if t_max - t_min > 375:
-        print(str(t_max - t_min))
+def convex_hull(points):
+    """Computes the convex hull of a set of 2D points.
 
-    if max(t_e) >= min(t_l):
-        print("BAD TIME: max(t_e) >= min(t_l)\t" + str(max(t_e)) + " >= " + str(min(t_l)) + "\tse = " + str(se))
-    if t_l[0] < t_e[0]:
-        print("BAD TIME 0!\t" + str(t_l[0]) + " < " + str(t_e[0]) + "\tse = " + str(se))
-    if t_l[1] < t_e[1]:
-        print("BAD TIME 1!\t" + str(t_l[1]) + " < " + str(t_e[1]) + "\tse = " + str(se))
-    if t_l[2] < t_e[2]:
-        print("BAD TIME 2!\t" + str(t_l[2]) + " < " + str(t_e[2]) + "\tse = " + str(se))
+    Input: an iterable sequence of (x, y) pairs representing the points.
+    Output: a list of vertices of the convex hull in counter-clockwise order,
+      starting from the vertex with the lexicographically smallest coordinates.
+    Implements Andrew's monotone chain algorithm. O(n log n) complexity.
+    
+    source: https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#Python
+    """
+
+    # Sort the points lexicographically (tuples are compared lexicographically).
+    # Remove duplicates to detect the case we have just one unique point.
+    points = sorted(set(points))
+
+    # Boring case: no points or a single point, possibly repeated multiple times.
+    if len(points) <= 1:
+        return points
+
+    # 2D cross product of OA and OB vectors, i.e. z-component of their 3D cross product.
+    # Returns a positive value, if OAB makes a counter-clockwise turn,
+    # negative for clockwise turn, and zero if the points are collinear.
+    def cross(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    # Build lower hull 
+    lower = []
+    for p in points:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    # Build upper hull
+    upper = []
+    for p in reversed(points):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    # Concatenation of the lower and upper hulls gives the convex hull.
+    # Last point of each list is omitted because it is repeated at the beginning of the other list. 
+    return lower[:-1] + upper[:-1]
 
 #
 
+def PolygonArea(corners):
+    """source: https://plot.ly/python/polygon-area/
+    """
+    n = len(corners)
+    area = 0.0
+    for i in range(n):
+        j = (i + 1) % n
+        area += corners[i][0] * corners[j][1]
+        area -= corners[j][0] * corners[i][1]
+    area = abs(area) / 2.0
+    return area
 
-
+#
 
 
 
@@ -316,94 +293,109 @@ def doChecks(t_e, t_l, se):
 # main function
 ###############################################################################
 
-def wiresMain(ew,et,lw,lt,subevent,prefix):
+def wiresMain(ew,lw,subevent,prefix):
     allmps_e = []
     allmps_l = []
-    allints_e = []
-    allints_l = []
-    for w_e,t_e,w_l,t_l,se in zip(ew,et,lw,lt,subevent):
+    allints_all = []
+    allareas = []
+    badevents = []
+    progress = 0
+    for w_e,w_l,se in zip(ew,lw,subevent):
         lines_e = []
         lines_l = []
         
-        #plot polygon
-        fig1 = plt.figure()
-        ax1 = fig1.add_subplot(111, aspect='equal')
-        ax1.add_patch(
-            patches.RegularPolygon(
-                (0, 0),      # (x,y)
-                6,           # number of vertices
-                radius,      # radius
-                fill = False
+        if plotEach == 1:
+            #plot polygon
+            fig1 = plt.figure()
+            ax1 = fig1.add_subplot(111, aspect='equal')
+            ax1.add_patch(
+                patches.RegularPolygon(
+                    (0, 0),      # (x,y)
+                    6,           # number of vertices
+                    radius,      # radius
+                    fill = False
+                )
             )
-        )
-        ax1.set_xlim(-200,200)
-        ax1.set_ylim(-200,200)
-        if plotaxis == 1: plotAxis()
-
-        if printstuff == 1: print("PLANE\twirenum\tx1\tx2\ty1\ty2\ti_x\ti_y\tdist")
+            ax1.set_xlim(-200,200)
+            ax1.set_ylim(-200,200)
+            if plotaxis == 1: plotAxis()
         
         #plot 3 wire planes
         for aa in range(3):
-            color = getColor(t_e[aa], t_e)
             coords = getWireCoords(aa, w_e)
             xx = coords[0]
             yy = coords[1]
-            plt.plot(xx, yy, color, ls='--')
+            if plotEach == 1:
+                plt.plot(xx, yy, startcolor, ls='-')
                         
             lines_e.append([xx,yy])
-
-            if printstuff == 1: printOutInfo(aa, w_e, xx, yy)
             
-            color = getColor(t_l[aa], t_e)
             coords = getWireCoords(aa, w_l)
             xx = coords[0]
             yy = coords[1]
-            plt.plot(xx, yy, color, ls='-')
+            if plotEach == 1:
+                plt.plot(xx, yy, endcolor, ls='-')
 
             lines_l.append([xx,yy])
-
-            if printstuff == 1: printOutInfo(aa, w_l, xx, yy)
-                
-        # checks
-        doChecks(t_e, t_l, se)
         
         mp_e = getMidpoint(lines_e)
-        ints_e = getAllIntersections(lines_e)
-        allmps_e.append(mp_e)
-        allints_e.append(ints_e)
         mp_l = getMidpoint(lines_l)
+        ints_e = getAllIntersections(lines_e)
         ints_l = getAllIntersections(lines_l)
-        allmps_l.append(mp_l)
-        allints_l.append(ints_l)
-        
-        if mapintersection == 1:
-            ax1 = fig1.add_subplot(111, aspect='equal')
-            ax1.add_patch(patches.Polygon(ints_e, color=startcolor, alpha=hotshading, lw=0))
-            ax1.add_patch(patches.Polygon(ints_l, color=endcolor, alpha=hotshading, lw=0))
-            ax1.set_xlim(-200,200)
-            ax1.set_ylim(-200,200)
-            
-            plotMPs(mp_e, mp_l)
-        
-        plt.savefig(prefix+str(se)+'.pdf', bbox_inches='tight')
-        
-    plotAllMPs([allmps_e, allmps_l], [allints_e, allints_l])
-    return [allmps_e, allmps_l]
 
+        ints_all = combineAllPoints(ints_e, ints_l)
+        ints_all = convex_hull(ints_all)
+        ints_all = np.array(ints_all)
+        
+        allareas.append(PolygonArea(ints_e))
+        allareas.append(PolygonArea(ints_l))
+        
+        if PolygonArea(ints_e) > badarealimit or PolygonArea(ints_l) > badarealimit:
+            badevents.append(se)
+        else:
+            allmps_e.append(mp_e)
+            allmps_l.append(mp_l)
+            allints_all.append(ints_all)
+
+        if plotEach == 1:
+            if mapintersection == 1:
+                ax1 = fig1.add_subplot(111, aspect='equal')
+                ax1.add_patch(patches.Polygon(ints_all, color=midcolor, alpha=hotshading, lw=0))
+                ax1.set_xlim(-200,200)
+                ax1.set_ylim(-200,200)
+                
+                plotMPs(mp_e, mp_l)
+            
+            plt.savefig(prefix+str(se)+'.pdf', bbox_inches='tight')
+            if progress % 25 == 0: print(prefix + str(se) + ".pdf saved\t~ " + str(100*progress/len(subevent)) + "% done")
+            plt.close()
+        else:
+            if progress % 25 == 0: print("\t~ " + str(100*progress/len(subevent)) + "% done")
+
+        progress = progress + 1
+        
+    plotAllRegions([allmps_e, allmps_l], allints_all, prefix)
+#    print("\n\n\n\n\nbad events = ")
+#    print badevents
+#    print("\n\n\n\n\n")
+#    return allints_all
+    return allareas
 
 
 ###############################################################################
 # data
 ###############################################################################
 
+
 # [x,u,v]
-et = []
-ew = []
+ew_beam = []
+lw_beam = []
+subevent_beam = []
 
-lt = []
-lw = []
+ew_cosmics = []
+lw_cosmics = []
+subevent_cosmics = []
 
-subevent = []
 
 # Read from ROOT file
 f = ROOT.TFile("tracks.root")
@@ -413,183 +405,43 @@ f.GetObject("tracks",t)
 ev = 1
 for e in t:
     for i in xrange(0,e.nmatches):
-        ew.append([int(e.first_hit_X[i]),int(e.first_hit_U[i]),int(e.first_hit_V[i])])
-        lw.append([int(e.last_hit_X[i]),int(e.last_hit_U[i]),int(e.last_hit_V[i])])
-        subev = '%d.%d' %(e.Event,i)
-        subevent.append(float(subev))
+        if e.beam[i] == 1:
+            ew_beam.append([int(e.first_hit_X[i]),int(e.first_hit_U[i]),int(e.first_hit_V[i])])
+            lw_beam.append([int(e.last_hit_X[i]),int(e.last_hit_U[i]),int(e.last_hit_V[i])])
+            subev = '%d.%d' %(e.Event,i)
+            subevent_beam.append(float(subev))
+        elif e.beam[i] == 0:
+            ew_cosmics.append([int(e.first_hit_X[i]),int(e.first_hit_U[i]),int(e.first_hit_V[i])])
+            lw_cosmics.append([int(e.last_hit_X[i]),int(e.last_hit_U[i]),int(e.last_hit_V[i])])
+            subev = '%d.%d' %(e.Event,i)
+            subevent_cosmics.append(float(subev))
+        else:
+            print("uh oh... something is wrong")            
 
-print ew
-print lw
-print subevent
-
-# times needed?
-    
-# check
-"""
-et = [[0,150,300], [0,150,300]]
-ew = [[165,165,165], [0,0,0]]
-
-lt = [[75,225,375], [75,225,375]]
-lw = [[166,166,166], [331,331,331]]
-
-subevent = [0.0,0.1]
-
-#
-
-et.append([0,150,300])
-ew.append([165,165,165])
-lt.append([75,225,375])
-lw.append([166,166,331])
-subevent.append(0.2)
-
-#
-
-et.append([375,187,0])
-ew.append([0,0,0])
-lt.append([375,187,0])
-lw.append([331,331,331])
-subevent.append(0.3)
-
-et.append([375,187,0])
-ew.append([165,165,165])
-lt.append([375,187,0])
-lw.append([166,166,166])
-subevent.append(0.4)
-"""
-# real data
-"""
-et.append([813.213,826.996,827.613])
-ew.append([168,    156,    150])
-lt.append([1128.39,1094.76,1143.94])
-lw.append([57,     160,    198])
-subevent.append(5)
-
-#
-
-et.append([-2218.03,-2258.38,-2219.13])
-ew.append([198,     92,      203])
-lt.append([-1897.63,-2095.31,-1911.08])
-lw.append([316,     53,      169.5])
-subevent.append(6.0)
-
-et.append([604.196,588.31,600.826])
-ew.append([78,     181,   241])
-lt.append([617.196,610.869,648.221])
-lw.append([49,     198,    248])
-subevent.append(6.1)
-
-et.append([4580.94,4588.52,4577.6])
-ew.append([129,    103,    283])
-lt.append([4733.44,4683.01,4728.77])
-lw.append([11,     198,    259])
-subevent.append(6.2)
-
-#
-
-et.append([-2586.3, -2615.83,-2590.63])
-ew.append([273,     34,      209])
-lt.append([-2360.57,-2452.99,-2364.91])
-lw.append([294,     46,      125])
-subevent.append(7.0)
-
-et.append([-640.471,-648.045,-641.663])
-ew.append([200,     1,       289])
-lt.append([-400.792,-507.73, -497.268])
-lw.append([213,     29,      254])
-subevent.append(7.1)
-
-et.append([262.468,255.302,262.224])
-ew.append([225,    134,    134])
-lt.append([308.328,300.672,301.102])
-lw.append([267,    129,    102])
-subevent.append(7.2)
-
-#
-
-et.append([-936.465,-932.741,-909.501])
-ew.append([95,      198,     208])
-lt.append([-675.623,-747.147,-686.214])
-lw.append([100,     188,     203])
-subevent.append(9)
-
-#
-
-et.append([109.59,195.499,107.096])
-ew.append([318,   95,     67])
-lt.append([224.005,217.991,219.176])
-lw.append([303,    80,     102])
-subevent.append(11)
-
-#
-
-et.append([-2621.97,-2639.12,-2619.02])
-ew.append([315,     302,     283])
-lt.append([-2476.02,-2467.49,-2443.65])
-lw.append([315,     214,     293])
-subevent.append(12.0)
-
-et.append([5410.18,5409.2, 5415.95])
-ew.append([239,    175,    15])
-lt.append([5475.58,5520.72,5484.94])
-lw.append([251,    187,    9])
-subevent.append(12.1)
-
-et.append([5440.38,5465.67,5462.97])
-ew.append([145,    230,    216])
-lt.append([5472.57,5473.4, 5485.62])
-lw.append([133,    241,    212])
-subevent.append(12.2)
-"""
-#
-"""
-et.append([])
-ew.append([])
-lt.append([])
-lw.append([])
-subevent.append()
-"""
 
 """
-# Jorge's listed subevents (with made-up times)
-ew = [[184,156,150], [78,181,241], [224,134,134], [318,95,67]]
-et = [[0,0,0],       [0,0,0],      [0,0,0],       [0,0,0]]
-
-lw = [[104,178,216], [49,198,255], [267,129,102], [303,80,102]]
-lt = [[375,375,375], [375,375,375],[375,375,375], [375,375,375]]
-
-subevent = [5,6,7,11]
-"""
-"""
-# my attempted matches of Jorge's listed subevents (slightly different?)
-et.append([813.213,826.996,827.613])
-ew.append([168,    156,    150])
-lt.append([1128.39,1094.76,1143.94])
-lw.append([57,     160,    198])
-subevent.append(5)
-
-et.append([604.196,588.31,600.826])
-ew.append([78,     181,   241])
-lt.append([617.196,610.869,648.221])
-lw.append([49,     198,    248])
-subevent.append(6.1)
-
-et.append([262.468,255.302,262.224])
-ew.append([225,    134,    134])
-lt.append([308.328,300.672,301.102])
-lw.append([267,    129,    102])
-subevent.append(7.2)
-
-et.append([109.59,195.499,107.096])
-ew.append([318,   95,     67])
-lt.append([224.005,217.991,219.176])
-lw.append([303,    80,     102])
-subevent.append(11)
+print("\n\new_beam = ")
+print ew_beam
+print("\n\nlw_beam = ")
+print lw_beam
+print("\n\nsubevent_beam = ")
+print subevent_beam
+print("\n\new_cosmics = ")
+print ew_cosmics
+print("\n\nlw_cosmics = ")
+print lw_cosmics
+print("\n\nsubevent_cosmics = ")
+print subevent_cosmics
+print("\n\n\n")
 """
 
 ###############################################################################
 # run
 ###############################################################################
 
-ans = wiresMain(ew,et,lw,lt,subevent,'12096_')
+ans1 = wiresMain(ew_beam,lw_beam,subevent_beam,'plot_beam_wires_')
+ans2 = wiresMain(ew_cosmics,lw_cosmics,subevent_cosmics,'plot_cosmics_wires_')
+
+
 
 
