@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import math
+import os,sys
 
 import ROOT
 
@@ -20,11 +21,11 @@ import ROOT
 # features to toggle
 ###############################################################################
 plotaxis = 0    #shows axis on hexagon
-plotEach = 1
+plotEach = 0
 
-mapintersection = 1 #0=no shading, 1=shade area between 3 wires
+mapintersection = 0 #0=no shading, 1=shade area between 3 wires
 hotshading = 0.05   #alpha of shading
-badarealimit = 50000000
+badarealimit = 5000
 
 ###############################################################################
 # constants & geometry
@@ -97,9 +98,10 @@ def plotAllRegions(allmps, allints_all, prefix):
             ax1.set_xlim(-200,200)
             ax1.set_ylim(-200,200)
         
-#        plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], midcolor, ls='-')
-#        plotMPs(mp_e, mp_l)
-    plt.savefig(prefix+'midpoints.pdf', bbox_inches='tight')
+        plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], midcolor, ls='-')
+        plotMPs(mp_e, mp_l)
+    plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.pdf', bbox_inches='tight')
+    plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.png', bbox_inches='tight')
 
 ################################################################### find values
 
@@ -300,6 +302,9 @@ def wiresMain(ew,lw,subevent,prefix):
     allareas = []
     badevents = []
     progress = 0
+
+    h_angle = ROOT.TH1F("h_angle","",100,-3.15,3.15)
+    
     for w_e,w_l,se in zip(ew,lw,subevent):
         lines_e = []
         lines_l = []
@@ -340,6 +345,7 @@ def wiresMain(ew,lw,subevent,prefix):
         
         mp_e = getMidpoint(lines_e)
         mp_l = getMidpoint(lines_l)
+             
         ints_e = getAllIntersections(lines_e)
         ints_l = getAllIntersections(lines_l)
 
@@ -366,7 +372,8 @@ def wiresMain(ew,lw,subevent,prefix):
                 
                 plotMPs(mp_e, mp_l)
             
-            plt.savefig(prefix+str(se)+'.pdf', bbox_inches='tight')
+            plt.savefig('plots/events/'+sys.argv[1].replace('.root','')+'/'+prefix+str(se)+'.pdf', bbox_inches='tight')
+            plt.savefig('plots/events/'+sys.argv[1].replace('.root','')+'/'+prefix+str(se)+'.png', bbox_inches='tight')
             if progress % 25 == 0: print(prefix + str(se) + ".pdf saved\t~ " + str(100*progress/len(subevent)) + "% done")
             plt.close()
         else:
@@ -375,6 +382,16 @@ def wiresMain(ew,lw,subevent,prefix):
         progress = progress + 1
         
     plotAllRegions([allmps_e, allmps_l], allints_all, prefix)
+    for gmp_e,gmp_l in zip(allmps_e, allmps_l):
+        x_len = (gmp_l[0]-gmp_e[0])
+        y_len = (gmp_l[1]-gmp_e[1])
+        h_angle.Fill(math.atan(y_len/x_len))
+    
+    c1 = ROOT.TCanvas("c1","",900,600)
+    h_angle.Draw()
+    c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.pdf')
+    c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.png')
+    
 #    print("\n\n\n\n\nbad events = ")
 #    print badevents
 #    print("\n\n\n\n\n")
@@ -398,9 +415,13 @@ subevent_cosmics = []
 
 
 # Read from ROOT file
-f = ROOT.TFile("tracks.root")
+if len(sys.argv) < 2:
+    raise ValueError('Missing input file.')
+    
+f = ROOT.TFile(sys.argv[1])
 t = ROOT.TTree()
 f.GetObject("tracks",t)
+os.system('mkdir -p plots/'+sys.argv[1].replace('.root',''))
 
 ev = 1
 for e in t:
