@@ -5,10 +5,12 @@ Created on Tue Dec  5 16:12:36 2017
 @author: Shannon Glavin - sglavin@sas.upenn.edu (Python 3.4)
 
 Description: functions that wires.py uses to plot
+             added: whichTypeMatch(wires), getMPorIntersection(wires), getHexagon(mp)
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import numpy as np
 import sys
 import math
 
@@ -75,28 +77,34 @@ def getWireCoords(wireplane, w_):
     # wire plane number = wireid + (338 - 332)/2 + 1
     # wireid 0 = wire plane number 4
     # wireid 331 = wire plane number 335
-    if w_[wireplane] > 331: print("uh oh: wire number confusion???")
-    wirenum = w_[wireplane] + 4
-    wirenum = wirenum + 0.5
-    #x plane
-    if wireplane == 0:
-        x = math.cos(math.pi/6) * (wirenum - const.radius)
-        x1 = x
-        x2 = x
-        y = const.radius
-        y1 = - 1 * y
-        y2 = y
-    #u or v plane
+    if w_[wireplane] > 331 or (w_[wireplane] < 0 and w_[wireplane] != -999): print("uh oh: wire number confusion???")
+    if w_[wireplane] == -999:
+        x1 = -999
+        x2 = -1000
+        y1 = -999
+        y2 = -1000
     else:
-        x = const.radius * math.cos(math.pi/6)
-        x1 = x
-        x2 = -1 * x
-        y1 = wirenum - 255
-        y2 = wirenum - 85
-        #v is sign difference from u
-        if wireplane == 2:
-            y1 = -1 * y1
-            y2 = -1 * y2
+        wirenum = w_[wireplane] + 4
+        wirenum = wirenum + 0.5
+        #x plane
+        if wireplane == 0:
+            x = math.cos(math.pi/6) * (wirenum - const.radius)
+            x1 = x
+            x2 = x
+            y = const.radius
+            y1 = - 1 * y
+            y2 = y
+        #u or v plane
+        else:
+            x = const.radius * math.cos(math.pi/6)
+            x1 = x
+            x2 = -1 * x
+            y1 = wirenum - 255
+            y2 = wirenum - 85
+            #v is sign difference from u
+            if wireplane == 2:
+                y1 = -1 * y1
+                y2 = -1 * y2
     return [[x1, x2], [y1, y2]]
 
 #
@@ -108,8 +116,8 @@ def getMidpoint(lines_):
     i_XV = allIntersections[2]
     mp_x = (i_UV[0] + i_XU[0] + i_XV[0])/3
     mp_y = (i_UV[1] + i_XU[1] + i_XV[1])/3
-    r_error = math.sqrt((i_UV[0] - mp_x)**2 + (i_UV[1] - mp_y)**2)
-    return [mp_x, mp_y, r_error]
+    #r_error = math.sqrt((i_UV[0] - mp_x)**2 + (i_UV[1] - mp_y)**2)
+    return [mp_x, mp_y]
 
 #
 
@@ -195,16 +203,13 @@ def getAllIntersections(lines_):
 
 def combineAllPoints(ints_e, ints_l):
     ints_all = []
-    for aa in range(3):
+    for aa in range(len(ints_e)):
         p1 = ints_e[aa]
-        p1_x = p1[0]
-        p1_y = p1[1]
-        pp1 = (p1_x, p1_y)
+        pp1 = (p1[0], p1[1])
         ints_all.append(pp1)
+    for aa in range(len(ints_l)):
         p2 = ints_l[aa]
-        p2_x = p2[0]
-        p2_y = p2[1]
-        pp2 = (p2_x, p2_y)
+        pp2 = (p2[0], p2[1])
         ints_all.append(pp2)
     return ints_all
 
@@ -270,3 +275,49 @@ def getTrackAngle(gmp_e,gmp_l):
     return ang
 
 #
+
+def whichTypeMatch(wires):
+    typematch = 0
+    if wires[0][0][0] == -999:
+        typematch = typematch + 1
+    if wires[1][0][0] == -999:
+        typematch = typematch + 10
+    if wires[2][0][0] == -999:
+        typematch = typematch + 100
+    return typematch
+
+#
+
+def getMPorIntersection(wires):
+    typematch = whichTypeMatch(wires)
+    if typematch == 1:
+        mp = getIntersectionUV(wires[1], wires[2])
+    elif typematch == 10:
+        mp = getIntersectionX(wires[0], wires[2])
+    elif typematch == 100:
+        mp = getIntersectionX(wires[0], wires[1])
+    elif typematch == 0:
+        mp = getMidpoint(wires)
+    else:
+        mp = -666
+        print("\n\nSOMETHING IS WRONG WITH MATCHING TRACKS???\n")
+    return (mp, typematch)
+
+#
+
+def getHexagon(mp):
+    dist = math.cos(math.pi/6)/2
+    x1 = mp[0] - dist
+    x2 = mp[0]
+    x3 = mp[0] + dist
+    y1 = mp[1] + 2*dist/np.sqrt(3)
+    y2 = mp[1] + dist/np.sqrt(3)
+    y3 = mp[1] - dist/np.sqrt(3)
+    y4 = mp[1] - 2*dist/np.sqrt(3)
+    z1 = [x1, y3]
+    z2 = [x1, y2]
+    z3 = [x2, y1]
+    z4 = [x3, y2]
+    z5 = [x3, y3]
+    z6 = [x2, y4]
+    return [z1, z2, z3, z4, z5, z6]
