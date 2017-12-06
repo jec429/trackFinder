@@ -21,7 +21,7 @@ import ROOT
 # features to toggle
 ###############################################################################
 plotaxis = 0    #shows axis on hexagon
-plotEach = 0
+plotEach = 1
 
 mapintersection = 0 #0=no shading, 1=shade area between 3 wires
 hotshading = 0.05   #alpha of shading
@@ -372,8 +372,8 @@ def wiresMain(ew,lw,subevent,prefix):
                 
                 plotMPs(mp_e, mp_l)
             
-            plt.savefig('plots/events/'+sys.argv[1].replace('.root','')+'/'+prefix+str(se)+'.pdf', bbox_inches='tight')
-            plt.savefig('plots/events/'+sys.argv[1].replace('.root','')+'/'+prefix+str(se)+'.png', bbox_inches='tight')
+            plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'.pdf', bbox_inches='tight')
+            plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'.png', bbox_inches='tight')
             if progress % 25 == 0: print(prefix + str(se) + ".pdf saved\t~ " + str(100*progress/len(subevent)) + "% done")
             plt.close()
         else:
@@ -421,7 +421,7 @@ if len(sys.argv) < 2:
 f = ROOT.TFile(sys.argv[1])
 t = ROOT.TTree()
 f.GetObject("tracks",t)
-os.system('mkdir -p plots/'+sys.argv[1].replace('.root',''))
+os.system('mkdir -p plots/'+sys.argv[1].replace('.root','')+'/events')
 
 ev = 1
 for e in t:
