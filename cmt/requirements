@@ -12,9 +12,25 @@ path_prepend LD_LIBRARY_PATH "$(TRACKFINDERROOT)/$(trackFinder_tag)"
 path_remove PATH "$(TRACKFINDERROOT)"
 path_prepend PATH "$(TRACKFINDERROOT)/$(trackFinder_tag)"
 
+macro treeMaker_cppflags " -DTREEMAKER_USED "
+macro treeMaker_linkopts " -L$(TREEMAKERROOT)/$(treeMaker_tag)"
+macro_append treeMaker_linkopts " -ltreeMaker "
+macro treeMaker_stamps " $(treeMakerstamp) $(linkdefstamp) "
+
+# The paths to find this library and it's executables
+path_remove LD_LIBRARY_PATH "$(TREEMAKERROOT)" 
+path_prepend LD_LIBRARY_PATH "$(TREEMAKERROOT)/$(treeMaker_tag)"
+
+path_remove PATH "$(TREEMAKERROOT)"
+path_prepend PATH "$(TREEMAKERROOT)/$(treeMaker_tag)"
+
 document linkdef linkdef *.hxx *_LinkDef.h
 
-application mySimpleEventLoop ../app/mySimpleEventLoop.cxx
-application runTime ../app/runTime.cxx
-application interactionTime ../app/interactionTimes.cxx
-application trackFinder ../app/trackFinder.cxx
+# The implementation library
+library treeMaker *.cxx *.hxx $(bin)dict/*.cxx $(bin)dict/*.h
+
+macro_append treeMaker_dependencies " linkdef "
+
+# The main application
+application tree-Maker ../app/treeMaker.cxx
+macro_append tree-Maker_dependencies " treeMaker " 
