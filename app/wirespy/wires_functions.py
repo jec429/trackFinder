@@ -5,7 +5,7 @@ Created on Tue Dec  5 16:12:36 2017
 @author: Shannon Glavin - sglavin@sas.upenn.edu (Python 3.4)
 
 Description: functions that wires.py uses to plot
-             added: whichTypeMatch(wires), getMPorIntersection(wires), getHexagon(mp)
+             added: getBigTriangle (which basically replaces getAllIntersections)
 """
 
 import matplotlib.pyplot as plt
@@ -269,8 +269,6 @@ def getTrackAngle(gmp_e,gmp_l):
     elif y_len < 0:
         ang = - 1 * math.pi/2    
     else:
-        print("\n\nSOMETHING VERY WEIRD IS GOING ON WITH ANGLES!")
-        print("x_len = " + str(x_len) + "\ty_len = "+ str(y_len))
         ang = -666
     return ang
 
@@ -321,3 +319,21 @@ def getHexagon(mp):
     z5 = [x3, y3]
     z6 = [x2, y4]
     return [z1, z2, z3, z4, z5, z6]
+
+#
+
+def getBigTriangle(lines_):
+    dist = math.cos(math.pi/6)/2
+    xlines = lines_[0]
+    ulines = lines_[1]
+    vlines = lines_[2]
+    i_UV = getIntersectionUV(ulines, vlines)
+    i1 = [i_UV[0], i_UV[1] + 2*dist/np.sqrt(3)]
+    i2 = [i_UV[0], i_UV[1] - 2*dist/np.sqrt(3)]
+    i_XU = getIntersectionX(xlines, ulines)
+    i3 = [i_XU[0] + dist, i_XU[1] + dist/np.sqrt(3)]
+    i4 = [i_XU[0] - dist, i_XU[1] - dist/np.sqrt(3)]
+    i_XV = getIntersectionX(xlines, vlines)
+    i5 = [i_XV[0] + dist, i_XV[1] - dist/np.sqrt(3)]
+    i6 = [i_XV[0] - dist, i_XV[1] + dist/np.sqrt(3)]
+    return [i1, i2, i3, i4, i5, i6]
