@@ -107,6 +107,18 @@ public:
 	return slope;
     }
 
+    float minHitDist(std::vector<std::tuple<double,double,double>> t1,std::vector<std::tuple<double,double,double>> t2) {
+	float minDist = 999;
+	for (auto h1:t1) {
+	    for (auto h2:t2) {
+		//std::cout<<"dist="<<(std::get<1>(h1)-std::get<1>(h2))*(std::get<1>(h1)-std::get<1>(h2))+(std::get<0>(h1)-std::get<0>(h2))*(std::get<0>(h1)-std::get<0>(h2))<<std::endl;
+		if ((std::get<1>(h1)-std::get<1>(h2))*(std::get<1>(h1)-std::get<1>(h2))+(std::get<0>(h1)-std::get<0>(h2))*(std::get<0>(h1)-std::get<0>(h2)) < minDist)
+		    minDist = (std::get<1>(h1)-std::get<1>(h2))*(std::get<1>(h1)-std::get<1>(h2))+(std::get<0>(h1)-std::get<0>(h2))*(std::get<0>(h1)-std::get<0>(h2));
+	    }	    
+	}
+	return minDist;
+    }
+
     std::vector<wTuple> instersection(std::vector<wTuple> &v1, std::vector<wTuple> &v2) {
 	std::vector<wTuple> v3;
 	sort(v1.begin(), v1.end());
@@ -382,7 +394,7 @@ public:
 			double deltaT = fabs(std::get<1>(trackSeeds[i][k])-std::get<1>(wiresTimesCharges[j]));
 			// std::cout<<"wire test="<<std::get<0>(wiresTimesCharges[j])<<std::endl;
 			// std::cout<<"Deltas="<<deltaW<<" "<<deltaT<<std::endl;
-			if ((deltaW !=0 && deltaT != 0) && deltaW < 10 && deltaT < 60) {
+			if ((deltaW !=0 && deltaT != 0) && deltaW < 10 && deltaT < 20) {
 			    trackSeeds[i].push_back(wiresTimesCharges[j]);
 			    wiresTimesCharges.erase(wiresTimesCharges.begin() + j);
 			}	  
@@ -407,20 +419,25 @@ public:
 		}
 	    }
 
-	    // Combine tracks by matching slopes
+	    // Combine tracks by matching slopes and are close by
 	    std::vector<std::pair<int,int>> matched_tracks;
-      
 	    for (unsigned int i = 0; i< pretracks.size(); i++) {
 		std::vector<wTuple> t1 = pretracks[i];
 		float slope1 = calculateSlope(t1);
 		for (unsigned int j = i; j < pretracks.size(); j++) {
 		    std::vector<wTuple> t2 = pretracks[j];
 		    float slope2 = calculateSlope(t2);
-		    if ( fabs(slope1-slope2)<0.1 ){	    
-			matched_tracks.push_back(std::make_pair(i,j));
+		    if ( fabs(slope1-slope2)<0.1){
+			float minDist = minHitDist(t1,t2);
+#ifdef VERBOSE
+			std::cout<<"Min dist="<<minDist<<std::endl;
+#endif
+			if (minDist < 100) {
+			    matched_tracks.push_back(std::make_pair(i,j));
 #ifdef VERBOSE
 			std::cout<<"Match"<<std::endl;
 #endif
+			}
 		    }
 		}
 	    }
@@ -537,7 +554,8 @@ public:
 #endif	
 
 	for (auto tsx:trackEdges[0]) {
-	    int match = 1;
+	    int matchV = 0;
+	    int matchU = 0;
 
 	    fhx = std::get<0>(std::get<0>(tsx)); // first hit X plane
 	    lhx = std::get<0>(std::get<1>(tsx)); // last hit X plane
@@ -549,14 +567,25 @@ public:
 
 	    std::tuple<wTuple,wTuple,int> matched_track_V;
 	    std::tuple<wTuple,wTuple,int> matched_track_U;
-      
+
+#ifdef VERBOSE
+	    std::cout<<"tracks V 1.5="<<trackEdges[1].size() <<std::endl;
+	    std::cout<<"tracks U 1.5="<<trackEdges[2].size() <<std::endl;
+#endif
+	    
 	    for (auto tsv:trackEdges[1]) {	
+#ifdef VVERBOSE
+		std::cout<<"timesV="<<std::get<1>(std::get<0>(tsx))<<" "<<std::get<1>(std::get<0>(tsv))<<
+		    " "<<std::get<1>(std::get<1>(tsx))<<" "<<std::get<1>(std::get<1>(tsv))<<std::endl;
+
+		std::cout<<"deltasV="<<delta_xv_f<<" "<<delta_xv_l<<std::endl;
+#endif	    
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < delta_xv_f ||
 		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l		     
 		     ) {
 		    delta_xv_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv)));
 		    delta_xv_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv)));
-		    match++;
+		    matchV++;
 		    fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
 		    lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
 		    matched_track_V = tsv;
@@ -564,26 +593,26 @@ public:
 	    }
 	    for (auto tsu:trackEdges[2]) {
 #ifdef VVERBOSE
-		std::cout<<"times="<<std::get<1>(std::get<0>(tsx))<<" "<<std::get<1>(std::get<0>(tsu))<<
+		std::cout<<"timesU="<<std::get<1>(std::get<0>(tsx))<<" "<<std::get<1>(std::get<0>(tsu))<<
 		    " "<<std::get<1>(std::get<1>(tsx))<<" "<<std::get<1>(std::get<1>(tsu))<<std::endl;
 
-		std::cout<<"deltas="<<delta_xu_f<<" "<<delta_xu_l<<std::endl;
+		std::cout<<"deltasU="<<delta_xu_f<<" "<<delta_xu_l<<std::endl;
 #endif	    
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < delta_xu_f ||
 		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu))) < delta_xu_l
 		     ) {
 		    delta_xu_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu)));
 		    delta_xu_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu)));
-		    match++;
+		    matchU++;
 		    fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
 		    lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
 		    matched_track_U = tsu;
 		}
 	    }
       
-	    if (match>2){	
+	    if (matchV > 0 && matchU > 0){	
 #ifdef VERBOSE
-		std::cout<<"match time="<<std::get<1>(std::get<0>(tsx)) <<std::endl;
+		std::cout<<"match time="<<std::get<1>(std::get<0>(tsx)) <<" "<< std::get<1>(std::get<0>(matched_track_V)) << " " << std::get<1>(std::get<0>(matched_track_U)) << std::endl;
 #endif
 		nMatches++;
 		first_hit_X.push_back(fhx);
