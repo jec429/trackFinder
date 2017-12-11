@@ -147,6 +147,7 @@ public:
 	tree->Branch("first_hit_U",&first_hit_U);
 	tree->Branch("last_hit_U",&last_hit_U);
 	tree->Branch("nmatches",&nmatches);
+	tree->Branch("nmatches2D",&nmatches2D);
 	tree->Branch("Event",&Event);
 	tree->Branch("beam",&beam);
 
@@ -393,7 +394,7 @@ public:
 	    std::cout<<"pruned seeds="<<trackSeeds.size()<<std::endl;
 #endif
 	    for (auto ts:trackSeeds) {
-#ifdef VERBOSE
+#ifdef VVERBOSE
 		std::cout<<"track seed size="<<ts.size()<<std::endl;
 		if (ts.size() > 1) {
 		    for(auto t:ts)
@@ -481,10 +482,10 @@ public:
 		    //}	  
 		    //}	
 		    //std::cout<<"Hits="<<std::get<0>(t1)<<" "<<std::get<1>(t1)<<std::endl;
-		    if (std::get<0>(t1) > wMax) {wMax = std::get<0>(t1); lastHit = t1;}
-		    if (std::get<1>(t1) > tMax) {tMax = std::get<1>(t1);};
-		    if (std::get<0>(t1) < wMin) {wMin = std::get<0>(t1); firstHit = t1;}
-		    if (std::get<1>(t1) < tMin) {tMin = std::get<1>(t1);};		
+		    if (std::get<0>(t1) > wMax) {wMax = std::get<0>(t1);}
+		    if (std::get<1>(t1) > tMax) {tMax = std::get<1>(t1);lastHit = t1; };
+		    if (std::get<0>(t1) < wMin) {wMin = std::get<0>(t1);}
+		    if (std::get<1>(t1) < tMin) {tMin = std::get<1>(t1); firstHit = t1;};		
 		}
 #ifdef VERBOSE
 		std::cout<<"EDGES="<<std::get<1>(firstHit)<<","<<std::get<0>(firstHit)<<" "<<std::get<1>(lastHit)<<","<<std::get<0>(lastHit)<<std::endl;
@@ -498,7 +499,9 @@ public:
 
 
 	std::sort(trackEdges[0].begin(), trackEdges[0].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
+	
 	std::sort(trackEdges[1].begin(), trackEdges[1].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
+	
 	std::sort(trackEdges[2].begin(), trackEdges[2].end(), [] (std::tuple<wTuple,wTuple,int> const& a, std::tuple<wTuple,wTuple,int> const& b) { return std::get<1>(std::get<0>(a)) < std::get<1>(std::get<0>(b)); });
 
 #ifdef VERBOSE
@@ -522,6 +525,17 @@ public:
 	int nMatches = 0;
 	double fhx,fhv,fhu;
 	double lhx,lhv,lhu;
+
+	std::vector<std::tuple<wTuple,wTuple,int>> used_tracks_X;
+	std::vector<std::tuple<wTuple,wTuple,int>> used_tracks_V;
+	std::vector<std::tuple<wTuple,wTuple,int>> used_tracks_U;
+
+#ifdef VERBOSE
+	std::cout<<"tracks X="<<trackEdges[0].size() <<std::endl;
+	std::cout<<"tracks V="<<trackEdges[1].size() <<std::endl;
+	std::cout<<"tracks U="<<trackEdges[2].size() <<std::endl;
+#endif	
+
 	for (auto tsx:trackEdges[0]) {
 	    int match = 1;
 
@@ -532,19 +546,29 @@ public:
 	    double delta_xv_l = 100;
 	    double delta_xu_f = 100;
 	    double delta_xu_l = 100;
+
+	    std::tuple<wTuple,wTuple,int> matched_track_V;
+	    std::tuple<wTuple,wTuple,int> matched_track_U;
       
 	    for (auto tsv:trackEdges[1]) {	
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < delta_xv_f ||
-		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l
+		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l		     
 		     ) {
 		    delta_xv_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv)));
 		    delta_xv_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv)));
 		    match++;
 		    fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
 		    lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
+		    matched_track_V = tsv;
 		}
 	    }
 	    for (auto tsu:trackEdges[2]) {
+#ifdef VVERBOSE
+		std::cout<<"times="<<std::get<1>(std::get<0>(tsx))<<" "<<std::get<1>(std::get<0>(tsu))<<
+		    " "<<std::get<1>(std::get<1>(tsx))<<" "<<std::get<1>(std::get<1>(tsu))<<std::endl;
+
+		std::cout<<"deltas="<<delta_xu_f<<" "<<delta_xu_l<<std::endl;
+#endif	    
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < delta_xu_f ||
 		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu))) < delta_xu_l
 		     ) {
@@ -553,6 +577,7 @@ public:
 		    match++;
 		    fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
 		    lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
+		    matched_track_U = tsu;
 		}
 	    }
       
@@ -568,6 +593,11 @@ public:
 		last_hit_V.push_back(lhv);
 		last_hit_U.push_back(lhu);
 
+		used_tracks_X.push_back(tsx);
+
+		trackEdges[1].erase(std::remove(trackEdges[1].begin(), trackEdges[1].end(), matched_track_V), trackEdges[1].end());
+		trackEdges[2].erase(std::remove(trackEdges[2].begin(), trackEdges[2].end(), matched_track_U), trackEdges[2].end());
+
 		if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
 		    beam.push_back(true);
 		else
@@ -575,11 +605,148 @@ public:
 	
 	    }
 	}
+
+	for (auto utx: used_tracks_X) {
+	    trackEdges[0].erase(std::remove(trackEdges[0].begin(), trackEdges[0].end(), utx), trackEdges[0].end());
+	}
+#ifdef VERBOSE
+	std::cout<<"tracks X 2="<<trackEdges[0].size() <<std::endl;
+	std::cout<<"tracks V 2="<<trackEdges[1].size() <<std::endl;
+	std::cout<<"tracks U 2="<<trackEdges[2].size() <<std::endl;
+#endif	
+
+	int nMatches_2D = 0;
+	for (auto tsx:trackEdges[0]) {
+	    fhx = std::get<0>(std::get<0>(tsx)); // first hit X plane
+	    lhx = std::get<0>(std::get<1>(tsx)); // last hit X plane	    
+	    double delta_xv_f = 100;
+	    double delta_xv_l = 100;
+      	    std::tuple<wTuple,wTuple,int> matched_track_V;
+
+	    for (auto tsv:trackEdges[1]) {	
+		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < delta_xv_f ||
+		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l		     
+		     ) {
+		    delta_xv_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv)));
+		    delta_xv_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv)));
+		    fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
+		    lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
+		    matched_track_V = tsv;
+		    used_tracks_X.push_back(tsx);
+		    nMatches_2D++;
+		    first_hit_X.push_back(fhx);
+		    first_hit_V.push_back(fhv);
+		    first_hit_U.push_back(-999);
+		    last_hit_X.push_back(lhx);
+		    last_hit_V.push_back(lhv);
+		    last_hit_U.push_back(-999);
+
+		    if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
+			beam.push_back(true);
+		    else
+			beam.push_back(false);		    
+		}
+	    }	    
+	    trackEdges[1].erase(std::remove(trackEdges[1].begin(), trackEdges[1].end(), matched_track_V), trackEdges[1].end());
+	}
+
+	for (auto utx: used_tracks_X) {
+	    trackEdges[0].erase(std::remove(trackEdges[0].begin(), trackEdges[0].end(), utx), trackEdges[0].end());
+	}
+#ifdef VERBOSE
+	std::cout<<"tracks X 3="<<trackEdges[0].size() <<std::endl;
+	std::cout<<"tracks V 3="<<trackEdges[1].size() <<std::endl;
+#endif	
+	
+	for (auto tsx:trackEdges[0]) {
+	    fhx = std::get<0>(std::get<0>(tsx)); // first hit X plane
+	    lhx = std::get<0>(std::get<1>(tsx)); // last hit X plane	    
+	    double delta_xu_f = 100;
+	    double delta_xu_l = 100;
+      	    std::tuple<wTuple,wTuple,int> matched_track_U;
+
+	    for (auto tsu:trackEdges[2]) {	
+		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < delta_xu_f ||
+		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu))) < delta_xu_l		     
+		     ) {
+		    delta_xu_f = fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu)));
+		    delta_xu_l = fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu)));
+		    fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
+		    lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane
+		    matched_track_U = tsu;
+		    used_tracks_X.push_back(tsx);
+		    nMatches_2D++;
+		    first_hit_X.push_back(fhx);
+		    first_hit_V.push_back(-999);
+		    first_hit_U.push_back(fhu);
+		    last_hit_X.push_back(lhx);
+		    last_hit_V.push_back(-999);
+		    last_hit_U.push_back(lhu);
+		    if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
+			beam.push_back(true);
+		    else
+			beam.push_back(false);	    
+		}
+	    }
+	    trackEdges[2].erase(std::remove(trackEdges[2].begin(), trackEdges[2].end(), matched_track_U), trackEdges[2].end());
+	}
+
+	for (auto utx: used_tracks_X) {
+	    trackEdges[0].erase(std::remove(trackEdges[0].begin(), trackEdges[0].end(), utx), trackEdges[0].end());
+	}
+#ifdef VERBOSE
+	std::cout<<"tracks X 4="<<trackEdges[0].size() <<std::endl;
+	std::cout<<"tracks V 4="<<trackEdges[2].size() <<std::endl;
+#endif
+	for (auto tsu:trackEdges[2]) {
+	    fhu = std::get<0>(std::get<0>(tsu)); // first hit U plane
+	    lhu = std::get<0>(std::get<1>(tsu)); // last hit U plane	    
+	    double delta_uv_f = 100;
+	    double delta_uv_l = 100;
+      	    std::tuple<wTuple,wTuple,int> matched_track_V;
+
+	    for (auto tsv:trackEdges[1]) {	
+		if ( fabs(std::get<1>(std::get<0>(tsu)) - std::get<1>(std::get<0>(tsv))) < delta_uv_f ||
+		     fabs(std::get<1>(std::get<1>(tsu)) - std::get<1>(std::get<1>(tsv))) < delta_uv_l		     
+		     ) {
+		    delta_uv_f = fabs(std::get<1>(std::get<0>(tsu)) - std::get<1>(std::get<0>(tsv)));
+		    delta_uv_l = fabs(std::get<1>(std::get<1>(tsu)) - std::get<1>(std::get<1>(tsv)));
+		    fhv = std::get<0>(std::get<0>(tsv)); // first hit V plane
+		    lhv = std::get<0>(std::get<1>(tsv)); // last hit V plane
+		    matched_track_V = tsv;
+		    used_tracks_U.push_back(tsu);
+		    nMatches_2D++;
+		    first_hit_X.push_back(-999);
+		    first_hit_V.push_back(fhv);
+		    first_hit_U.push_back(fhu);
+		    last_hit_X.push_back(-999);
+		    last_hit_V.push_back(lhv);
+		    last_hit_U.push_back(lhu);
+		    if (std::get<1>(std::get<0>(tsu)) > 0 && std::get<1>(std::get<0>(tsu)) < 2000)
+			beam.push_back(true);
+		    else
+			beam.push_back(false);
+		}
+	    }
+	    trackEdges[1].erase(std::remove(trackEdges[1].begin(), trackEdges[1].end(), matched_track_V), trackEdges[1].end());	    
+	}
+
+	for (auto utu: used_tracks_U) {
+	    trackEdges[2].erase(std::remove(trackEdges[2].begin(), trackEdges[2].end(), utu), trackEdges[2].end());
+	}
+#ifdef VERBOSE
+	std::cout<<"tracks U 5="<<trackEdges[2].size() <<std::endl;
+	std::cout<<"tracks V 5="<<trackEdges[1].size() <<std::endl;
+#endif	
+	
+
 	nmatches = nMatches;
+	nmatches2D = nMatches_2D;
 	tree->Fill();
 	tracks3D->Fill(nMatches);
 #ifdef VERBOSE
 	std::cout<<"nMatches="<<nMatches<<std::endl;
+	std::cout<<"nMatches 2D="<<nMatches_2D<<std::endl;
 
 	std::cout<<"=============================================="<<std::endl;
 	std::cout<<"=============================================="<<std::endl;
@@ -613,6 +780,7 @@ private:
     TFile* hfile;
     TTree* tree;
     Int_t nmatches;
+    Int_t nmatches2D;
     Int_t Event;
   
     std::vector<bool> beam;
