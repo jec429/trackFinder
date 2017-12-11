@@ -408,7 +408,7 @@ def writeLog_4(filename, a_max, a_ave, a_med, num_bad):
     text_file.write("\naverage area = " + str(a_ave))
     text_file.write("\nmedian area = " + str(a_med))
     if tog.badarealimit != -1:
-        text_file.write("\n# of bad events (area(s) > " + tog.badarealimit + ") = " + str(num_bad))
+        text_file.write("\n# of bad events (area(s) > " + str(tog.badarealimit) + ") = " + str(num_bad))
     text_file.close()
 
 ###################################################################new/unsorted
