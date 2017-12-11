@@ -6,7 +6,7 @@ Created on Mon Dec 11 13:39:10 2017
 
 Description:
 copied & working off of wire.py created by Jorge Chaves
-newest changes: tidied up
+newest changes: changed filenaming system
 """
 
 import matplotlib.pyplot as plt
@@ -100,7 +100,7 @@ def wiresMain(ew,lw,subevent,prefix):
         triareas_all.append(pa_e)
         triareas_all.append(pa_l)
         
-        if func.PolygonArea(ints_e) > tog.badarealimit or func.PolygonArea(ints_l) > tog.badarealimit:
+        if tog.badarealimit != -1 and (func.PolygonArea(ints_e) > tog.badarealimit or func.PolygonArea(ints_l) > tog.badarealimit):
             badevents.append(se)
         else:
             allmps_e.append(mp_e)
@@ -117,10 +117,10 @@ def wiresMain(ew,lw,subevent,prefix):
             if tog.plt_dots == 1: func.plotMPs(mp_e, mp_l)
 
             if tog.locallaptop == 1:
-                plt.savefig(prefix+str(se)+'.pdf', bbox_inches='tight')
+                plt.savefig(prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
             else:
-                plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'.pdf', bbox_inches='tight')
-                plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'.png', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.png', bbox_inches='tight')
             plt.close()
 
         if tog.showprogress == 1:
@@ -145,8 +145,8 @@ def wiresMain(ew,lw,subevent,prefix):
     if tog.locallaptop == 0:
         c1 = ROOT.TCanvas("c1","",900,600)
         h_angle.Draw()
-        c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.pdf')
-        c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.png')
+        c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.pdf')
+        c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.png')
     
     if tog.createlog == 1: func.writeLog_4(timestamp[0], np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
     

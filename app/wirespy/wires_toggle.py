@@ -10,7 +10,7 @@ Description: features of wires.py to toggle
 locallaptop = 0 #1=shannon's working on local laptop, 0=not that
 
 plotEach = 0    #1=plot each individual track, 0=only plot visual heat maps 
-badarealimit = 2000 #38841 #limit of triangular area for track to be included
+badarealimit = -1 #limit of triangular area for track to be included, -1=no limit
 
 #plot style options
 plt_dots = 1

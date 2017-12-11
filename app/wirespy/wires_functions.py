@@ -352,7 +352,7 @@ def getTime():
     s_S = datetime.now().strftime('%S')
     filename = "logwires_"
     if tog.locallaptop == 0: filename = filename + sys.argv[1].replace('.root','_')
-    filename = filename + s_y + s_m + s_d + s_H + s_M + s_S + ".txt"
+    filename = filename + str(tog.badarealimit) + "_" + s_y + s_m + s_d + s_H + s_M + s_S + ".txt"
     timestamp = s_d + "/" + s_m + "/" + s_y + " " + s_H + ":" + s_M + ":" + s_S
     return [filename, timestamp]
 
@@ -407,7 +407,8 @@ def writeLog_4(filename, a_max, a_ave, a_med, num_bad):
     text_file.write("\n\n\nmax area = " + str(a_max))
     text_file.write("\naverage area = " + str(a_ave))
     text_file.write("\nmedian area = " + str(a_med))
-    text_file.write("\n# of bad events (area(s) > 2000) = " + str(num_bad))
+    if tog.badarealimit != -1:
+        text_file.write("\n# of bad events (area(s) > " + tog.badarealimit + ") = " + str(num_bad))
     text_file.close()
 
 ###################################################################new/unsorted
