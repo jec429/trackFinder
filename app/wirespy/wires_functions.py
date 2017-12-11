@@ -70,8 +70,8 @@ def plotAllRegions(allmps, polyregion_all, prefix):
     if tog.locallaptop == 1:
         plt.savefig(prefix+'midpoints.pdf', bbox_inches='tight')
     else:
-        plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.pdf', bbox_inches='tight')
-        plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.png', bbox_inches='tight')
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/'+prefix+'midpoints.pdf', bbox_inches='tight')
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/'+prefix+'midpoints.png', bbox_inches='tight')
 
 ############################################################ find intersections
 
@@ -351,7 +351,7 @@ def getTime():
     s_M = datetime.now().strftime('%M')
     s_S = datetime.now().strftime('%S')
     filename = "logwires_"
-    if tog.locallaptop == 0: filename = filename + sys.argv[1].replace('.root','_')
+    if tog.locallaptop == 0: filename = filename + sys.argv[1].replace('.root','_').split('/')[-1]
     filename = filename + str(tog.badarealimit) + "_" + s_y + s_m + s_d + s_H + s_M + s_S + ".txt"
     timestamp = s_d + "/" + s_m + "/" + s_y + " " + s_H + ":" + s_M + ":" + s_S
     return [filename, timestamp]
