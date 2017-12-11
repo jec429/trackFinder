@@ -119,8 +119,8 @@ def wiresMain(ew,lw,subevent,prefix):
             if tog.locallaptop == 1:
                 plt.savefig(prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
             else:
-                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
-                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.png', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.png', bbox_inches='tight')
             plt.close()
 
         if tog.showprogress == 1:
@@ -145,9 +145,9 @@ def wiresMain(ew,lw,subevent,prefix):
     if tog.locallaptop == 0:
         c1 = ROOT.TCanvas("c1","",900,600)
         h_angle.Draw()
-        c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.pdf')
-        c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.png')
-    
+        c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.pdf')
+        c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.png')
+
     if tog.createlog == 1: func.writeLog_4(timestamp[0], np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
     
     if tog.returnoption == 0:
@@ -180,8 +180,7 @@ if tog.locallaptop == 0:
     f = ROOT.TFile(sys.argv[1])
     t = ROOT.TTree()
     f.GetObject("tracks",t)
-    fn = sys.argv[1].replace('.root','').split('/')[-1]
-    os.system('mkdir -p plots/'+fn+'/events')
+    os.system('mkdir -p plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events')
     
     ev = 1
     for e in t:
