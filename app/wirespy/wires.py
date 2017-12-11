@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Dec 10 15:46:46 2017
+Created on Mon Dec 11 13:39:10 2017
 
 @author: Shannon Glavin - sglavin@sas.upenn.edu (Python 3.4)
 
 Description:
 copied & working off of wire.py created by Jorge Chaves
-newest changes: fills in bad angle and creates log
+newest changes: tidied up
 """
 
 import matplotlib.pyplot as plt
@@ -20,17 +20,13 @@ import wires_functions as func
 import wires_toggle as tog
 
 if tog.locallaptop == 0: import ROOT
-if tog.createlog == 1:
-    from datetime import datetime
 
 ###############################################################################
 # main function
 ###############################################################################
 
 def wiresMain(ew,lw,subevent,prefix):
-    if tog.createlog == 1:
-        text_file.write("\n\n" + prefix + "\n")
-        text_file.write("\n\nsubevent\tearly wire ID [x,u,v]\tlate wire ID [x,u,v]\tearly midpoint/intersection\tlate midpoint/intersection\ttype of wire match (early)\ttype of wire match (late)\tearly intersection area\tlate intersection area\t\n\n")
+    if tog.createlog == 1: func.writeLog_2(timestamp[0], prefix)
     
     allmps_e = []       #list of all early midpoints
     allmps_l = []       #list of all late midpoints
@@ -98,8 +94,11 @@ def wiresMain(ew,lw,subevent,prefix):
         ints_all = func.convex_hull(ints_all)
         ints_all = np.array(ints_all)
         
-        triareas_all.append(func.PolygonArea(ints_e))
-        triareas_all.append(func.PolygonArea(ints_l))
+        pa_e = func.PolygonArea(ints_e)
+        pa_l = func.PolygonArea(ints_l)
+        
+        triareas_all.append(pa_e)
+        triareas_all.append(pa_l)
         
         if func.PolygonArea(ints_e) > tog.badarealimit or func.PolygonArea(ints_l) > tog.badarealimit:
             badevents.append(se)
@@ -131,23 +130,7 @@ def wiresMain(ew,lw,subevent,prefix):
                 if progress % 25 == 0: print("\t~ " + str(100*progress/len(subevent)) + "% done")
             progress = progress + 1
         
-        if tog.createlog == 1:
-            text_file.write("\n" + str(se) + "\t" + str(w_e) + "\t" + str(w_l) + "\t")
-            text_file.write(str(mp_e) + "\t" + str(mp_l) + "\t")
-            if tm_e == 0:
-                text_file.write("3\t")
-            elif mp_e != -666:
-                text_file.write("2\t")
-            else:
-                text_file.write("-1\t")
-            if tm_l == 0:
-                text_file.write("3\t")
-            elif mp_l != -666:
-                text_file.write("2\t")
-            else:
-                text_file.write("-1\t")
-            text_file.write(str(func.PolygonArea(ints_e)) + "\t")
-            text_file.write(str(func.PolygonArea(ints_l)) + "\t")
+        if tog.createlog == 1: func.writeLog_3(timestamp[0], se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l)
         
     func.plotAllRegions([allmps_e, allmps_l], polyregion_all, prefix)
     
@@ -165,11 +148,7 @@ def wiresMain(ew,lw,subevent,prefix):
         c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.pdf')
         c1.Print('plots/'+sys.argv[1].replace('.root','')+'/'+'h_angle_'+prefix[:-1]+'.png')
     
-    if tog.createlog == 1:
-        text_file.write("\n\n\nmax area = " + str(np.max(triareas_all)))
-        text_file.write("\naverage area = " + str(np.average(triareas_all)))
-        text_file.write("\nmedian area = " + str(np.median(triareas_all)))
-        text_file.write("\n# of bad events (area(s) > 2000) = " + str(len(badevents)))
+    if tog.createlog == 1: func.writeLog_4(timestamp[0], np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
     
     if tog.returnoption == 0:
         return polyregion_all
@@ -228,35 +207,13 @@ else:
     subevent_cosmics = [7.2, 7.3, 9.0, 11.1, 11.2, 12.2, 14.0, 14.1, 14.2, 16.0, 16.3, 18.2, 18.3, 21.1, 21.2, 21.3, 21.4, 23.0, 23.3, 25.0, 27.0, 28.2, 32.0, 33.0, 33.2, 35.0, 36.0, 36.1, 36.2, 36.3, 36.5, 36.6, 37.0, 41.0, 41.1, 42.2, 44.1, 45.1, 46.0, 51.0, 52.2, 53.0, 53.2, 55.1, 56.0, 59.0, 59.1, 59.2, 60.0, 65.0, 66.0, 67.0, 67.2, 71.0, 74.0, 75.1, 76.1, 76.2, 77.0, 77.2, 79.0, 85.0, 85.1, 87.0, 89.1, 90.1, 91.0, 91.1, 94.0, 96.0, 99.0, 104.0, 110.1, 111.1, 113.0, 115.0, 116.0, 118.0, 119.0, 124.0, 124.1, 125.0, 125.1, 126.0, 133.0, 135.1, 137.1, 144.1, 146.0, 146.1, 146.2, 147.0, 147.3, 151.0, 152.0, 154.1, 156.1, 157.0, 159.0, 160.0, 161.0, 162.2, 162.3, 162.4, 166.3, 166.4, 168.1, 169.0, 173.1, 177.0, 177.1, 178.0, 178.2, 178.3, 179.0, 187.1, 188.0, 194.1, 195.0, 195.1, 195.2, 202.0, 204.0, 204.1, 206.0, 208.1, 213.0, 215.0, 216.0, 220.0, 220.1, 222.0, 223.1, 226.1, 226.2, 226.3, 230.0, 233.2, 234.1, 237.0, 239.0, 240.0, 241.0, 242.0, 242.1, 243.1, 244.1, 248.3, 249.1, 252.0, 254.0, 257.0, 257.1, 257.2, 257.4, 257.5, 259.1, 263.0, 265.4, 265.5, 269.0, 271.0, 271.2, 271.3, 272.0, 272.3, 272.4, 273.0, 276.0, 276.1, 279.0, 282.2, 286.2, 287.0, 287.1, 288.0, 289.0, 291.0, 296.0, 296.2, 296.4, 296.5, 302.2, 305.0, 305.1, 307.0, 308.0, 308.4, 311.0, 312.0, 313.1, 314.0, 314.1, 314.2, 315.2, 315.3, 320.0, 320.1, 323.0, 328.0, 328.1, 328.3, 329.0, 330.1, 332.0, 332.1, 339.0, 339.2, 341.0, 343.1, 344.0, 344.2, 346.0, 347.0, 348.0, 350.2, 350.4, 354.0, 358.0, 358.1, 359.0, 361.0, 364.0, 365.0, 366.1, 366.2, 370.0, 373.0, 376.0, 377.0, 377.2, 378.0, 379.0, 379.1, 380.0, 382.0, 383.1, 383.2, 383.3, 384.0, 388.0, 390.0, 391.0, 392.0, 393.0, 398.0, 399.0, 400.0, 400.1, 400.2, 402.1, 403.0, 409.0, 409.3, 409.4, 409.5, 411.0, 412.0, 414.0, 414.1, 415.1, 417.0, 419.3, 420.2, 421.0, 422.0, 424.0, 425.0, 425.2, 425.3, 428.0, 429.2, 430.0, 433.0, 435.0, 437.1, 437.2, 439.0, 443.1, 446.0, 447.0, 447.1, 450.2, 451.1, 452.0, 453.0, 453.2, 455.0, 456.0, 456.1, 457.0, 457.1, 457.2, 460.0, 461.0, 465.0, 466.1, 467.0, 469.0, 470.2, 470.3, 470.4, 470.5, 471.0, 476.0, 476.1, 477.1, 480.0, 483.0, 486.0, 487.0, 487.1, 490.0, 491.0, 492.1, 492.2, 493.0, 493.1, 493.3, 495.1, 499.0, 499.2, 501.0, 502.0, 505.0, 505.1, 506.0, 507.0, 508.1, 509.0, 509.1, 511.0, 511.3, 517.0, 517.1, 518.0, 519.3, 520.2, 522.0, 523.0, 525.0, 526.1, 526.2, 527.1, 529.0, 529.1, 530.0, 530.2, 532.0, 533.2, 534.0, 538.0, 541.0, 544.3, 545.0, 546.0, 546.1, 546.2, 550.0, 551.1, 553.0, 553.4, 554.0, 554.1, 554.2, 554.3, 555.0, 558.0, 558.2, 560.2, 560.3, 566.0, 567.0, 567.1, 568.0, 572.0, 574.0, 575.0, 577.2, 577.3, 578.0, 579.0, 579.1, 579.2, 579.3, 579.4, 579.5, 579.6, 580.1, 580.2, 581.1, 581.3, 582.1, 583.0, 584.1, 586.1, 587.0, 590.0, 591.0, 591.1, 592.1, 597.0, 597.1, 598.2, 600.0, 601.1, 602.1, 604.1, 606.1, 607.0, 610.0, 610.1, 615.0, 616.0, 616.1, 620.0, 620.1, 620.3, 623.0, 623.1, 626.0, 626.2, 628.0, 629.0, 631.2, 634.1, 635.0, 635.2, 636.0, 638.0, 639.0, 639.1, 640.0, 641.0, 645.0, 645.1, 648.0, 649.1, 651.0, 651.1, 652.1, 653.1, 653.2, 655.0, 663.1, 664.1, 665.0, 666.0, 669.0, 670.0, 670.1, 670.2, 672.0, 672.1, 675.0, 677.1, 679.0, 680.0, 683.0, 686.0, 687.0, 690.0, 691.2, 693.3, 696.0, 697.0, 697.1, 698.1, 700.0, 701.0, 703.0, 704.1, 706.0, 706.1, 706.2, 707.0, 709.0, 711.1, 717.1, 718.0, 719.0, 720.0, 721.2, 722.0, 723.2, 726.0, 726.1, 727.0, 728.0, 729.0, 729.1, 729.2, 730.2, 732.0, 733.0, 734.0, 736.0, 736.4, 736.5, 738.1, 739.0, 739.1, 740.1, 740.2, 741.3, 744.1, 747.0, 747.2, 748.0, 748.1, 757.0, 757.1, 758.0, 758.1, 758.3, 760.1, 760.2, 762.1, 762.2, 762.3, 764.0, 766.2, 769.1, 771.0, 772.0, 772.1, 773.0, 773.1, 773.2, 778.1, 781.0, 781.1, 781.2, 783.2, 783.3, 784.0, 784.1, 785.1, 787.0, 788.0, 789.0, 790.2, 791.0, 794.1, 795.0, 797.0, 798.0, 800.0, 802.0, 806.0, 808.1, 815.0, 816.1, 816.2, 818.0, 819.0, 822.0, 822.3, 822.4, 823.1, 824.1, 826.0, 826.4, 827.0, 831.1, 832.0, 832.1, 833.0, 833.1, 835.0, 836.0, 839.0, 839.1, 841.0, 841.1, 842.0, 843.0, 844.1, 847.0, 849.0, 851.0, 853.0, 855.1, 857.1, 860.0, 860.2, 861.3, 862.0, 863.0, 864.0, 867.0, 868.0, 870.0, 872.0, 872.3, 873.0, 873.2, 875.0, 875.2, 876.0, 878.1, 879.0, 879.1, 880.0, 881.0, 884.0, 885.0, 885.1, 886.0, 889.0, 890.0, 891.0, 893.2, 901.0, 903.0, 903.2, 904.0, 904.1, 906.0, 906.1, 907.0, 907.1, 909.0, 909.2, 913.0, 914.0, 917.0, 919.1, 919.3, 920.0, 920.1, 921.0, 921.1, 924.0, 924.1, 926.0, 928.0, 929.1, 932.0, 934.1, 937.0, 939.0, 939.1, 940.0, 942.0, 943.3, 943.4, 945.0, 945.2, 947.0, 947.3, 948.0, 948.1, 949.1, 951.0, 953.0, 956.1, 957.1, 958.2, 960.0, 960.1, 961.0, 961.1, 962.0, 962.2, 965.0, 966.1, 967.1, 968.0, 972.0, 974.0, 974.1, 977.0, 979.0, 979.1, 981.2, 981.3, 982.0, 983.0, 984.0, 986.0, 989.1, 991.0, 993.2]
 
 ###############################################################################
-# log setup
-###############################################################################
-if tog.createlog == 1:
-    s_y = datetime.now().strftime('%y')
-    s_m = datetime.now().strftime('%m')
-    s_d = datetime.now().strftime('%d')
-    s_H = datetime.now().strftime('%H')
-    s_M = datetime.now().strftime('%M')
-    s_S = datetime.now().strftime('%S')
-    label = ""
-    if tog.locallaptop == 0: label = sys.argv[1].replace('.root','_')
-    text_file = open("logwires_" + label + s_y + s_m + s_d + s_H + s_M + s_S + ".txt", "w")
-    text_file.write("timestamp: " + s_d + "/" + s_m + "/" + s_y + " " + s_H + ":" + s_M + ":" + s_S + "\n")
-    if tog.locallaptop == 0: text_file.write("file: " + sys.argv[1] + "\n")
-    text_file.write("\new_beam = " + str(ew_beam) + "\n")
-    text_file.write("lw_beam = " + str(lw_beam) + "\n")
-    text_file.write("subevent_beam = " + str(subevent_beam) + "\n\n\n\n")
-    text_file.write("ew_cosmics = " + str(ew_cosmics) + "\n")
-    text_file.write("lw_cosmics = " + str(lw_cosmics) + "\n")
-    text_file.write("subevent_cosmics = " + str(subevent_cosmics) + "\n\n\n\n")
-
-###############################################################################
 # run
 ###############################################################################
 
+timestamp = func.getTime()
+
+if tog.createlog == 1:
+    func.writeLog_1(timestamp, ew_beam, lw_beam, subevent_beam, ew_cosmics, lw_cosmics, subevent_cosmics)
+
 ans1 = wiresMain(ew_beam,lw_beam,subevent_beam,'plot_beam_wires_')
 ans2 = wiresMain(ew_cosmics,lw_cosmics,subevent_cosmics,'plot_cosmics_wires_')
-
-
-text_file.close()
-
-

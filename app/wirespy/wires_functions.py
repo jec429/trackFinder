@@ -17,6 +17,8 @@ import math
 import wires_constants as const
 import wires_toggle as tog
 
+if tog.createlog == 1:
+    from datetime import datetime
 
 
 ############################################################ plotting functions
@@ -71,68 +73,6 @@ def plotAllRegions(allmps, polyregion_all, prefix):
         plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.pdf', bbox_inches='tight')
         plt.savefig('plots/'+sys.argv[1].replace('.root','')+'/'+prefix+'midpoints.png', bbox_inches='tight')
 
-################################################################### find values
-
-def getWireCoords(wireplane, w_):
-    # wire plane number = wireid + (338 - 332)/2 + 1
-    # wireid 0 = wire plane number 4
-    # wireid 331 = wire plane number 335
-    if w_[wireplane] > 331 or (w_[wireplane] < 0 and w_[wireplane] != -999): print("uh oh: wire number confusion???")
-    if w_[wireplane] == -999:
-        x1 = -999
-        x2 = -1000
-        y1 = -999
-        y2 = -1000
-    else:
-        wirenum = w_[wireplane] + 4
-        wirenum = wirenum + 0.5
-        #x plane
-        if wireplane == 0:
-            x = math.cos(math.pi/6) * (wirenum - const.radius)
-            x1 = x
-            x2 = x
-            y = const.radius
-            y1 = - 1 * y
-            y2 = y
-        #u or v plane
-        else:
-            x = const.radius * math.cos(math.pi/6)
-            x1 = x
-            x2 = -1 * x
-            y1 = wirenum - 255
-            y2 = wirenum - 85
-            #v is sign difference from u
-            if wireplane == 2:
-                y1 = -1 * y1
-                y2 = -1 * y2
-    return [[x1, x2], [y1, y2]]
-
-#
-
-def getMidpoint(lines_):
-    allIntersections = getAllIntersections(lines_)
-    i_UV = allIntersections[0]
-    i_XU = allIntersections[1]
-    i_XV = allIntersections[2]
-    mp_x = (i_UV[0] + i_XU[0] + i_XV[0])/3
-    mp_y = (i_UV[1] + i_XU[1] + i_XV[1])/3
-    #r_error = math.sqrt((i_UV[0] - mp_x)**2 + (i_UV[1] - mp_y)**2)
-    return [mp_x, mp_y]
-
-#
-
-def PolygonArea(corners):
-    """source: https://plot.ly/python/polygon-area/
-    """
-    n = len(corners)
-    area = 0.0
-    for i in range(n):
-        j = (i + 1) % n
-        area += corners[i][0] * corners[j][1]
-        area -= corners[j][0] * corners[i][1]
-    area = abs(area) / 2.0
-    return area
-    
 ############################################################ find intersections
 
 def getAxisIntersection(wireplane, xx, yy):
@@ -199,6 +139,137 @@ def getAllIntersections(lines_):
     i_XV = getIntersectionX(xlines, vlines)
     return [i_UV, i_XU, i_XV]
 
+############################################################## find coordinates
+
+def getWireCoords(wireplane, w_):
+    # wire plane number = wireid + (338 - 332)/2 + 1
+    # wireid 0 = wire plane number 4
+    # wireid 331 = wire plane number 335
+    if w_[wireplane] > 331 or (w_[wireplane] < 0 and w_[wireplane] != -999): print("uh oh: wire number confusion???")
+    if w_[wireplane] == -999:
+        x1 = -999
+        x2 = -1000
+        y1 = -999
+        y2 = -1000
+    else:
+        wirenum = w_[wireplane] + 4
+        wirenum = wirenum + 0.5
+        #x plane
+        if wireplane == 0:
+            x = math.cos(math.pi/6) * (wirenum - const.radius)
+            x1 = x
+            x2 = x
+            y = const.radius
+            y1 = - 1 * y
+            y2 = y
+        #u or v plane
+        else:
+            x = const.radius * math.cos(math.pi/6)
+            x1 = x
+            x2 = -1 * x
+            y1 = wirenum - 255
+            y2 = wirenum - 85
+            #v is sign difference from u
+            if wireplane == 2:
+                y1 = -1 * y1
+                y2 = -1 * y2
+    return [[x1, x2], [y1, y2]]
+
+#
+
+def getMidpoint(lines_):
+    allIntersections = getAllIntersections(lines_)
+    i_UV = allIntersections[0]
+    i_XU = allIntersections[1]
+    i_XV = allIntersections[2]
+    mp_x = (i_UV[0] + i_XU[0] + i_XV[0])/3
+    mp_y = (i_UV[1] + i_XU[1] + i_XV[1])/3
+    #r_error = math.sqrt((i_UV[0] - mp_x)**2 + (i_UV[1] - mp_y)**2)
+    return [mp_x, mp_y]
+
+#
+
+def getHexagon(mp):
+    dist = math.cos(math.pi/6)/2
+    x1 = mp[0] - dist
+    x2 = mp[0]
+    x3 = mp[0] + dist
+    y1 = mp[1] + 2*dist/np.sqrt(3)
+    y2 = mp[1] + dist/np.sqrt(3)
+    y3 = mp[1] - dist/np.sqrt(3)
+    y4 = mp[1] - 2*dist/np.sqrt(3)
+    z1 = [x1, y3]
+    z2 = [x1, y2]
+    z3 = [x2, y1]
+    z4 = [x3, y2]
+    z5 = [x3, y3]
+    z6 = [x2, y4]
+    return [z1, z2, z3, z4, z5, z6]
+
+#
+
+def getBigTriangle(lines_):
+    dist = math.cos(math.pi/6)/2
+    xlines = lines_[0]
+    ulines = lines_[1]
+    vlines = lines_[2]
+    i_UV = getIntersectionUV(ulines, vlines)
+    i1 = [i_UV[0], i_UV[1] + 2*dist/np.sqrt(3)]
+    i2 = [i_UV[0], i_UV[1] - 2*dist/np.sqrt(3)]
+    i_XU = getIntersectionX(xlines, ulines)
+    i3 = [i_XU[0] + dist, i_XU[1] + dist/np.sqrt(3)]
+    i4 = [i_XU[0] - dist, i_XU[1] - dist/np.sqrt(3)]
+    i_XV = getIntersectionX(xlines, vlines)
+    i5 = [i_XV[0] + dist, i_XV[1] - dist/np.sqrt(3)]
+    i6 = [i_XV[0] - dist, i_XV[1] + dist/np.sqrt(3)]
+    return [i1, i2, i3, i4, i5, i6]
+
+#
+
+def getMPorIntersection(wires):
+    typematch = whichTypeMatch(wires)
+    if typematch == 1:
+        mp = getIntersectionUV(wires[1], wires[2])
+    elif typematch == 10:
+        mp = getIntersectionX(wires[0], wires[2])
+    elif typematch == 100:
+        mp = getIntersectionX(wires[0], wires[1])
+    elif typematch == 0:
+        mp = getMidpoint(wires)
+    else:
+        mp = -666
+        print("\n\nSOMETHING IS WRONG WITH MATCHING TRACKS???\n")
+    return (mp, typematch)
+
+################################################################### find values
+
+def PolygonArea(corners):
+    """source: https://plot.ly/python/polygon-area/
+    """
+    n = len(corners)
+    area = 0.0
+    for i in range(n):
+        j = (i + 1) % n
+        area += corners[i][0] * corners[j][1]
+        area -= corners[j][0] * corners[i][1]
+    area = abs(area) / 2.0
+    return area
+
+#
+
+def getTrackAngle(gmp_e,gmp_l):
+    x_len = (gmp_l[0]-gmp_e[0])
+    y_len = (gmp_l[1]-gmp_e[1])
+    if x_len != 0:
+        ang = math.atan(y_len/x_len)
+    elif y_len > 0:
+        ang = math.pi/2
+    elif y_len < 0:
+        ang = - 1 * math.pi/2    
+    else:
+        ang = -666
+    return ang
+
 ######################################################################### other
 
 def combineAllPoints(ints_e, ints_l):
@@ -258,20 +329,6 @@ def convex_hull(points):
     # Last point of each list is omitted because it is repeated at the beginning of the other list. 
     return lower[:-1] + upper[:-1]
 
-###################################################################new/unsorted
-def getTrackAngle(gmp_e,gmp_l):
-    x_len = (gmp_l[0]-gmp_e[0])
-    y_len = (gmp_l[1]-gmp_e[1])
-    if x_len != 0:
-        ang = math.atan(y_len/x_len)
-    elif y_len > 0:
-        ang = math.pi/2
-    elif y_len < 0:
-        ang = - 1 * math.pi/2    
-    else:
-        ang = -666
-    return ang
-
 #
 
 def whichTypeMatch(wires):
@@ -284,56 +341,73 @@ def whichTypeMatch(wires):
         typematch = typematch + 100
     return typematch
 
+#################################################################### create log
+
+def getTime():
+    s_y = datetime.now().strftime('%y')
+    s_m = datetime.now().strftime('%m')
+    s_d = datetime.now().strftime('%d')
+    s_H = datetime.now().strftime('%H')
+    s_M = datetime.now().strftime('%M')
+    s_S = datetime.now().strftime('%S')
+    filename = "logwires_"
+    if tog.locallaptop == 0: filename = filename + sys.argv[1].replace('.root','_')
+    filename = filename + s_y + s_m + s_d + s_H + s_M + s_S + ".txt"
+    timestamp = s_d + "/" + s_m + "/" + s_y + " " + s_H + ":" + s_M + ":" + s_S
+    return [filename, timestamp]
+
 #
 
-def getMPorIntersection(wires):
-    typematch = whichTypeMatch(wires)
-    if typematch == 1:
-        mp = getIntersectionUV(wires[1], wires[2])
-    elif typematch == 10:
-        mp = getIntersectionX(wires[0], wires[2])
-    elif typematch == 100:
-        mp = getIntersectionX(wires[0], wires[1])
-    elif typematch == 0:
-        mp = getMidpoint(wires)
+def writeLog_1(ts, ew_beam, lw_beam, subevent_beam, ew_cosmics, lw_cosmics, subevent_cosmics):
+    text_file = open(ts[0], "w")
+    text_file.write("timestamp: " + ts[1] + "\n")
+    if tog.locallaptop == 0: text_file.write("file: " + sys.argv[1] + "\n")
+    text_file.write("\new_beam = " + str(ew_beam) + "\n")
+    text_file.write("lw_beam = " + str(lw_beam) + "\n")
+    text_file.write("subevent_beam = " + str(subevent_beam) + "\n\n\n\n")
+    text_file.write("ew_cosmics = " + str(ew_cosmics) + "\n")
+    text_file.write("lw_cosmics = " + str(lw_cosmics) + "\n")
+    text_file.write("subevent_cosmics = " + str(subevent_cosmics) + "\n\n\n\n")
+    text_file.close()
+
+#
+
+def writeLog_2(filename, prefix):
+    text_file = open(filename, "a")
+    text_file.write("\n\n" + prefix + "\n")
+    text_file.write("\n\nsubevent\tearly wire ID [x,u,v]\tlate wire ID [x,u,v]\tearly midpoint/intersection\tlate midpoint/intersection\ttype of wire match (early)\ttype of wire match (late)\tearly intersection area\tlate intersection area\t\n\n")
+    text_file.close()
+
+#
+
+def writeLog_3(filename, se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l):
+    text_file = open(filename, "a")
+    text_file.write("\n" + str(se) + "\t" + str(w_e) + "\t" + str(w_l) + "\t")
+    text_file.write(str(mp_e) + "\t" + str(mp_l) + "\t")
+    if tm_e == 0:
+        text_file.write("3\t")
+    elif mp_e != -666:
+        text_file.write("2\t")
     else:
-        mp = -666
-        print("\n\nSOMETHING IS WRONG WITH MATCHING TRACKS???\n")
-    return (mp, typematch)
+        text_file.write("-1\t")
+    if tm_l == 0:
+        text_file.write("3\t")
+    elif mp_l != -666:
+        text_file.write("2\t")
+    else:
+        text_file.write("-1\t")
+    text_file.write(str(pa_e) + "\t")
+    text_file.write(str(pa_l) + "\t")
+    text_file.close()
 
 #
 
-def getHexagon(mp):
-    dist = math.cos(math.pi/6)/2
-    x1 = mp[0] - dist
-    x2 = mp[0]
-    x3 = mp[0] + dist
-    y1 = mp[1] + 2*dist/np.sqrt(3)
-    y2 = mp[1] + dist/np.sqrt(3)
-    y3 = mp[1] - dist/np.sqrt(3)
-    y4 = mp[1] - 2*dist/np.sqrt(3)
-    z1 = [x1, y3]
-    z2 = [x1, y2]
-    z3 = [x2, y1]
-    z4 = [x3, y2]
-    z5 = [x3, y3]
-    z6 = [x2, y4]
-    return [z1, z2, z3, z4, z5, z6]
+def writeLog_4(filename, a_max, a_ave, a_med, num_bad):
+    text_file = open(filename, "a")
+    text_file.write("\n\n\nmax area = " + str(a_max))
+    text_file.write("\naverage area = " + str(a_ave))
+    text_file.write("\nmedian area = " + str(a_med))
+    text_file.write("\n# of bad events (area(s) > 2000) = " + str(num_bad))
+    text_file.close()
 
-#
-
-def getBigTriangle(lines_):
-    dist = math.cos(math.pi/6)/2
-    xlines = lines_[0]
-    ulines = lines_[1]
-    vlines = lines_[2]
-    i_UV = getIntersectionUV(ulines, vlines)
-    i1 = [i_UV[0], i_UV[1] + 2*dist/np.sqrt(3)]
-    i2 = [i_UV[0], i_UV[1] - 2*dist/np.sqrt(3)]
-    i_XU = getIntersectionX(xlines, ulines)
-    i3 = [i_XU[0] + dist, i_XU[1] + dist/np.sqrt(3)]
-    i4 = [i_XU[0] - dist, i_XU[1] - dist/np.sqrt(3)]
-    i_XV = getIntersectionX(xlines, vlines)
-    i5 = [i_XV[0] + dist, i_XV[1] - dist/np.sqrt(3)]
-    i6 = [i_XV[0] - dist, i_XV[1] + dist/np.sqrt(3)]
-    return [i1, i2, i3, i4, i5, i6]
+###################################################################new/unsorted
