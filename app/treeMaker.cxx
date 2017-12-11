@@ -4,6 +4,7 @@
 #include <eventLoop.hxx>
 #include <TReconTrack.hxx>
 #include <TReconHit.hxx>
+#include <TRealDatum.hxx>
 
 #include <TEvent.hxx>
 
@@ -63,12 +64,27 @@ public:
 	std::cout<<event.GetContext()<<std::endl;
 
 	CP::THandle<CP::TReconObjectContainer> tracks = event.Get<CP::TReconObjectContainer>("~/fits/TCaptainRecon/final");
+	CP::THandle<CP::TDataVector> dataPMT = event.Get<CP::TDataVector>("~/pmtData");
 
+	TString pdsEvent = "";
+	for (int i=0; i<dataPMT->size(); i++) {
+	    pdsEvent.Form("~/pmtData/PDSEvent_%d",i);
+	    CP::THandle<CP::TEvent> eventPMT = event.Get<CP::TEvent>(pdsEvent);
+	    if (!eventPMT) {
+		std::cout<<"NO PMT EVENT"<<std::endl;
+	    }
+	    else {
+		double TOF = (eventPMT->Get<CP::TRealDatum>("TOF_ns"))->GetValue();
+		if (TOF > 0)
+		    std::cout<<"TOF="<<(TOF)<<std::endl;
+	    }
+	}
+	
 	if (tracks) {
-	    std::cout<<"TRACKS"<<std::endl;
+	    //std::cout<<"TRACKS"<<std::endl;
 	    for (CP::TReconObjectContainer::const_iterator t = tracks->begin(); t != tracks->end(); ++t) {
 		CP::THandle<CP::THitSelection> hits = (*t)->GetHits();
-		std::cout<<"TRACK"<<std::endl;
+		//std::cout<<"TRACK"<<std::endl;
 		double min_z = 9999;
 		double max_z = -9999;
 		TVector3 min_hit;
@@ -85,8 +101,8 @@ public:
 			min_hit = v;
 		    }
 		}
-		std::cout<<"MIN HIT X="<<min_hit.X()<<" Y="<<min_hit.Y()<<" Z="<<min_hit.Z()<<std::endl;		 
-		std::cout<<"MAX HIT X="<<max_hit.X()<<" Y="<<max_hit.Y()<<" Z="<<max_hit.Z()<<std::endl;
+		//std::cout<<"MIN HIT X="<<min_hit.X()<<" Y="<<min_hit.Y()<<" Z="<<min_hit.Z()<<std::endl;		 
+		//std::cout<<"MAX HIT X="<<max_hit.X()<<" Y="<<max_hit.Y()<<" Z="<<max_hit.Z()<<std::endl;
 		first_hit_X.push_back(min_hit.X());
 		last_hit_X.push_back(max_hit.X());
 		first_hit_Y.push_back(min_hit.Y());
@@ -98,48 +114,14 @@ public:
 	else {
 	    std::cout<<"NO TRACKS"<<std::endl;
 	}
-	// if(!event.FindDatum("pmtData"))
-	//     event.AddDatum(new CP::TDataVector("pmtData","Data from PDS system"));
-
-	// long int evTimeS = event.GetTimeStamp();
-	// int evTimeN= event.GetContext().GetNanoseconds();
-	// evTimeS += (long int)evTimeN;
-
-	// std::vector<long int> timePMT ;
-
-	// for(int i=0;i<fPmtSec.size();++i){
-	//     long int t = (long int)fPmtSec[i]*1000000000+(long int)fPmtNano[i];
-	//     timePMT.push_back(t);
-	// }
-
-	// int count=0;
-	// for(std::size_t i=0;i<timePMT.size();++i){
-	//     long int diff = abs(timePMT[i]-evTimeS);
-	//     double matchDiff=abs((double)diff/1000000);
-      
-	//     fTimeDiff->Fill(matchDiff);
-	//     if(matchDiff<100){
-	// 	std::cout<<matchDiff<<std::endl;
-	// 	int ns=timePMT[i] % 1000000000;
-	// 	int se=timePMT[i] / 1000000000;
-	// 	std::string name  = "PDSEvent_"+toString(count);
-	// 	CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
-	// 	CP::TEventContext pmtEv(22,22,22,22,ns,se);
-	// 	std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
-	// 	pmtData->AddDatum(eventPMT.release(),name.c_str());
-	// 	count++;
-	//     }
-       
-	// }
-	// std::cout<<count<<std::endl;
 
 	tree->Fill();		
 	first_hit_X.clear();
 	last_hit_X.clear();
 	first_hit_Y.clear();
 	last_hit_Y.clear();
-	first_hit_Y.clear();
-	last_hit_Y.clear();
+	first_hit_Z.clear();
+	last_hit_Z.clear();
 
 	return true;
     }
