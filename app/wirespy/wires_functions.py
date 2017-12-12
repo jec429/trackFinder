@@ -33,8 +33,8 @@ def plotAxis():
 #
 
 def plotMPs(mp_e, mp_l):
-    plt.plot(mp_e[0], mp_e[1], const.startcolor, marker='.')
-    plt.plot(mp_l[0], mp_l[1], const.endcolor, marker='.')
+    plt.plot(mp_e[0], mp_e[1], const.startcolor, marker='.', markersize=const.ms)
+    plt.plot(mp_l[0], mp_l[1], const.endcolor, marker='.', markersize=const.ms)
 
 #
 
@@ -65,7 +65,7 @@ def plotAllRegions(allmps, polyregion_all, prefix):
             ax1.set_xlim(-200,200)
             ax1.set_ylim(-200,200)
         
-        if tog.plt_lines == 1: plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-')
+        if tog.plt_lines == 1: plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-', lw=const.lw)
         if tog.plt_dots == 1: plotMPs(mp_e, mp_l)
     if tog.locallaptop == 1:
         plt.savefig(prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.pdf', bbox_inches='tight')

@@ -28,6 +28,8 @@ vaxis = [[-1 * radius * math.cos(math.pi/6)/2, radius * math.cos(math.pi/6)/2], 
 plotaxis = 0    #shows axis on hexagon
 
 hotshading = 0.05   #alpha of shading
+ms = 2
+lw = 0.5
 
 startcolor = (0, 255, 0)
 startcolor = '#%02x%02x%02x' % startcolor

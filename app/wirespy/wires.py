@@ -209,7 +209,7 @@ else:
     lw_beam = loc.lw_beam
     subevent_beam = loc.subevent_beam
     ew_cosmics = loc.ew_cosmics
-    lw_cosmics = lw_cosmics
+    lw_cosmics = loc.lw_cosmics
     subevent_cosmics = loc.subevent_cosmics
 
 ###############################################################################
