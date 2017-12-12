@@ -54,19 +54,23 @@ def plotAllRegions(allmps, polyregion_all, prefix):
     if const.plotaxis == 1: plotAxis()
     allmps_e = allmps[0]
     allmps_l = allmps[1]
-    for aa in range(len(allmps_e)):
-        mp_e = allmps_e[aa]
-        mp_l = allmps_l[aa]
-        ints_all = polyregion_all[aa]
-        
-        if tog.plt_shading == 1:
+    if tog.plt_shading == 1:
+        for aa in range(len(allmps_e)):
+            ints_all = polyregion_all[aa]
             ax1 = fig1.add_subplot(111, aspect='equal')
             ax1.add_patch(patches.Polygon(ints_all, color=const.midcolor, alpha=const.hotshading, lw=0))
             ax1.set_xlim(-200,200)
             ax1.set_ylim(-200,200)
-        
-        if tog.plt_lines == 1: plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-', lw=const.lw)
-        if tog.plt_dots == 1: plotMPs(mp_e, mp_l)
+    if tog.plt_lines == 1:
+        for aa in range(len(allmps_e)):
+            mp_e = allmps_e[aa]
+            mp_l = allmps_l[aa]
+            plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-', lw=const.lw)
+    if tog.plt_dots == 1:
+        for aa in range(len(allmps_e)):
+            mp_e = allmps_e[aa]
+            mp_l = allmps_l[aa]
+            plotMPs(mp_e, mp_l)
     if tog.locallaptop == 1:
         plt.savefig(prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.pdf', bbox_inches='tight')
     else:
