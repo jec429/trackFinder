@@ -122,8 +122,8 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
             if tog.locallaptop == 1:
                 plt.savefig(prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
             else:
-                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.pdf', bbox_inches='tight')
-                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'.png', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'.pdf', bbox_inches='tight')
+                plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events/'+prefix+str(se)+'_'+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'.png', bbox_inches='tight')
             plt.close()
 
         if tog.showprogress == 1:

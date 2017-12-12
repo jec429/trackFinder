@@ -68,10 +68,10 @@ def plotAllRegions(allmps, polyregion_all, prefix):
         if tog.plt_lines == 1: plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-')
         if tog.plt_dots == 1: plotMPs(mp_e, mp_l)
     if tog.locallaptop == 1:
-        plt.savefig(prefix+str(tog.badarealimit)+'_midpoints.pdf', bbox_inches='tight')
+        plt.savefig(prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.pdf', bbox_inches='tight')
     else:
-        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_midpoints.pdf', bbox_inches='tight')
-        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_midpoints.png', bbox_inches='tight')
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.pdf', bbox_inches='tight')
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.png', bbox_inches='tight')
 
 ############################################################ find intersections
 
