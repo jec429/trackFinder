@@ -28,7 +28,7 @@ else:
 # main function
 ###############################################################################
 
-def wiresMain(ew,lw,subevent,prefix):
+def wiresMain(n_events, ew,lw,subevent,prefix):
     if tog.createlog == 1: func.writeLog_2(timestamp[0], prefix)
     
     allmps_e = []       #list of all early midpoints
@@ -151,7 +151,7 @@ def wiresMain(ew,lw,subevent,prefix):
         c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.pdf')
         c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.png')
 
-    if tog.createlog == 1: func.writeLog_4(timestamp[0], len(subevent), int(np.max(subevent)), np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
+    if tog.createlog == 1: func.writeLog_4(timestamp[0], len(subevent), n_events, np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
     
     if tog.returnoption == 0:
         return polyregion_all
@@ -175,6 +175,8 @@ ew_cosmics = []
 lw_cosmics = []
 subevent_cosmics = []
 
+n_events = -666
+
 if tog.locallaptop == 0:
     # Read from ROOT file
     if len(sys.argv) < 2:
@@ -186,6 +188,7 @@ if tog.locallaptop == 0:
     os.system('mkdir -p plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/events')
     
     ev = 1
+    n_events = t.GetEntries()
     for e in t:
         for i in xrange(0,e.nmatches+e.nmatches2D):
             if e.beam[i] == 1:
@@ -218,5 +221,5 @@ timestamp = func.getTime()
 if tog.createlog == 1:
     func.writeLog_1(timestamp, ew_beam, lw_beam, subevent_beam, ew_cosmics, lw_cosmics, subevent_cosmics)
 
-ans1 = wiresMain(ew_beam,lw_beam,subevent_beam,'plot_beam_wires_')
-ans2 = wiresMain(ew_cosmics,lw_cosmics,subevent_cosmics,'plot_cosmics_wires_')
+ans1 = wiresMain(n_events, ew_beam,lw_beam,subevent_beam,'plot_beam_wires_')
+ans2 = wiresMain(n_events, ew_cosmics,lw_cosmics,subevent_cosmics,'plot_cosmics_wires_')
