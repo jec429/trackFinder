@@ -353,7 +353,7 @@ def getTime():
     filename = "logwires_"
     if tog.locallaptop == 0: filename = filename + sys.argv[1].replace('.root','_').split('/')[-1]
     filename = filename + str(tog.badarealimit) + "_" + s_y + s_m + s_d + s_H + s_M + s_S + ".txt"
-    filename = 'plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/' + filename
+    if tog.locallaptop == 0: filename = 'plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/' + filename
     timestamp = s_d + "/" + s_m + "/" + s_y + " " + s_H + ":" + s_M + ":" + s_S
     return [filename, timestamp]
 
@@ -403,13 +403,17 @@ def writeLog_3(filename, se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l):
 
 #
 
-def writeLog_4(filename, a_max, a_ave, a_med, num_bad):
+def writeLog_4(filename, n_tracks, n_events, a_max, a_ave, a_med, num_bad):
     text_file = open(filename, "a")
-    text_file.write("\n\n\nmax area = " + str(a_max))
+    text_file.write("\n\n\nnumber of tracks = " + str(n_tracks))
+    text_file.write("\nnumber of events = " + str(n_events))
+    text_file.write("\nnumber of tracks per event = " + str(n_tracks/float(n_events)))
+    text_file.write("\n\nmax area = " + str(a_max))
     text_file.write("\naverage area = " + str(a_ave))
     text_file.write("\nmedian area = " + str(a_med))
     if tog.badarealimit != -1:
         text_file.write("\n# of bad events (area(s) > " + str(tog.badarealimit) + ") = " + str(num_bad))
+    text_file.write("\n\n\n###########################################\n\n\n")
     text_file.close()
 
 ###################################################################new/unsorted
