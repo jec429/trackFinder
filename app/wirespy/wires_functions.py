@@ -380,12 +380,12 @@ def writeLog_1(ts, ew_beam, lw_beam, subevent_beam, ew_cosmics, lw_cosmics, sube
 def writeLog_2(filename, prefix):
     text_file = open(filename, "a")
     text_file.write("\n\n" + prefix + "\n")
-    text_file.write("\n\nsubevent\tearly wire ID [x,u,v]\tlate wire ID [x,u,v]\tearly midpoint/intersection\tlate midpoint/intersection\ttype of wire match (early)\ttype of wire match (late)\tearly intersection area\tlate intersection area\t\n\n")
+    text_file.write("\n\nsubevent\tearly wire ID [x,u,v]\tlate wire ID [x,u,v]\tearly midpoint/intersection\tlate midpoint/intersection\ttype of wire match (early)\ttype of wire match (late)\tearly intersection area\tlate intersection area\testimated track length\t\n\n")
     text_file.close()
 
 #
 
-def writeLog_3(filename, se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l):
+def writeLog_3(filename, se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l, g_dist):
     text_file = open(filename, "a")
     text_file.write("\n" + str(se) + "\t" + str(w_e) + "\t" + str(w_l) + "\t")
     text_file.write(str(mp_e) + "\t" + str(mp_l) + "\t")
@@ -403,11 +403,12 @@ def writeLog_3(filename, se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l):
         text_file.write("-1\t")
     text_file.write(str(pa_e) + "\t")
     text_file.write(str(pa_l) + "\t")
+    text_file.write(str(g_dist) + "\t")
     text_file.close()
 
 #
 
-def writeLog_4(filename, n_tracks, n_events, a_max, a_ave, a_med, num_bad):
+def writeLog_4(filename, n_tracks, n_events, a_max, a_ave, a_med, d_max, d_ave, d_med, d2_max, d2_ave, d2_med, num_bad):
     text_file = open(filename, "a")
     text_file.write("\n\n\nnumber of tracks = " + str(n_tracks))
     text_file.write("\nnumber of events = " + str(n_events))
@@ -415,9 +416,40 @@ def writeLog_4(filename, n_tracks, n_events, a_max, a_ave, a_med, num_bad):
     text_file.write("\n\nmax area = " + str(a_max))
     text_file.write("\naverage area = " + str(a_ave))
     text_file.write("\nmedian area = " + str(a_med))
+    text_file.write("\n\nmax track length = " + str(d_max))
+    text_file.write("\naverage track length = " + str(d_ave))
+    text_file.write("\nmedian track length = " + str(d_med))
+    text_file.write("\n\nmax track length (after area cuts) = " + str(d2_max))
+    text_file.write("\naverage track length (after area cuts) = " + str(d2_ave))
+    text_file.write("\nmedian track length (after area cuts) = " + str(d2_med))
     if tog.badarealimit != -1:
-        text_file.write("\n# of bad events (area(s) > " + str(tog.badarealimit) + ") = " + str(num_bad))
+        text_file.write("\n\n# of bad events (area(s) > " + str(tog.badarealimit) + ") = " + str(num_bad))
     text_file.write("\n\n\n###########################################\n\n\n")
     text_file.close()
 
 ###################################################################new/unsorted
+
+def getTrackLength_0(ints_all):
+    g_dist=0
+    for aa in range(len(ints_all)-1):
+        point1 = ints_all[aa]
+        for bb in range(aa+1,len(ints_all)):
+            point2 = ints_all[bb]
+            new_dist = np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+            if new_dist > g_dist:
+                g_dist = new_dist
+    return g_dist
+
+#
+
+def getTrackLength(ints_e, ints_l):
+    g_dist=0
+    for ee in range(len(ints_e)):
+        point1 = ints_e[ee]
+        for ll in range(len(ints_l)):
+            point2 = ints_l[ll]
+            new_dist = np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+            if new_dist > g_dist:
+                g_dist = new_dist
+    return g_dist
+

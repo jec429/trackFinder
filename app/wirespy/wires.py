@@ -36,6 +36,8 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
     polyregion_all = [] #list of all polygon regions (as multiple lists of xy coords)
     triareas_all = []   #list of all triangular areas enclosed by wire (of each plane) associated with hit
     badevents = []      #list of subevents that don't meet the badarealimit
+    gdist_all = []      #list of greatest possible track lengths
+    gdist_cut = []      #list of greatest possible track lengths with tracks of cut things
     progress = 0        #to show print out of how many tracks finished
 
     if tog.locallaptop == 0:
@@ -43,7 +45,7 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
     else:
         h_angle = []
     
-    for w_e,w_l,se in zip(ew,lw,subevent):        
+    for w_e,w_l,se in zip(ew,lw,subevent):
         wires_e = []    #list of wires associated with early hit
         wires_l = []    #list of wires associated with late hit
         
@@ -97,6 +99,10 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
         ints_all = func.convex_hull(ints_all)
         ints_all = np.array(ints_all)
         
+        #g_dist=func.getTrackLength_0(ints_all)
+        g_dist = func.getTrackLength(ints_e, ints_l)
+        gdist_all.append(g_dist)
+        
         pa_e = func.PolygonArea(ints_e)
         pa_l = func.PolygonArea(ints_l)
         
@@ -109,6 +115,7 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
             allmps_e.append(mp_e)
             allmps_l.append(mp_l)
             polyregion_all.append(ints_all)
+            gdist_cut.append(g_dist)
         
         if tog.plotEach == 1:
             if tog.plt_shading == 1:
@@ -133,7 +140,7 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
                 if progress % 25 == 0: print("\t~ " + str(100*progress/len(subevent)) + "% done")
             progress = progress + 1
         
-        if tog.createlog == 1: func.writeLog_3(timestamp[0], se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l)
+        if tog.createlog == 1: func.writeLog_3(timestamp[0], se, w_e, w_l, mp_e, mp_l, tm_e, tm_l, pa_e, pa_l, g_dist)
         
     func.plotAllRegions([allmps_e, allmps_l], polyregion_all, prefix)
     
@@ -151,7 +158,7 @@ def wiresMain(n_events, ew,lw,subevent,prefix):
         c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.pdf')
         c1.Print('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+'h_angle_'+prefix[:-1]+'_'+str(tog.badarealimit)+'.png')
 
-    if tog.createlog == 1: func.writeLog_4(timestamp[0], len(subevent), n_events, np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), len(badevents))
+    if tog.createlog == 1: func.writeLog_4(timestamp[0], len(subevent), n_events, np.max(triareas_all), np.average(triareas_all), np.median(triareas_all), np.max(gdist_all), np.average(gdist_all), np.median(gdist_all), np.max(gdist_cut), np.average(gdist_cut), np.median(gdist_cut), len(badevents))
     
     if tog.returnoption == 0:
         return polyregion_all
