@@ -17,8 +17,7 @@ import math
 import wires_constants as const
 import wires_toggle as tog
 
-if tog.createlog == 1:
-    from datetime import datetime
+from datetime import datetime
 
 
 ############################################################ plotting functions
@@ -244,6 +243,18 @@ def getMPorIntersection(wires):
         mp = -666
         print("\n\nSOMETHING IS WRONG WITH MATCHING TRACKS???\n")
     return (mp, typematch)
+
+#
+
+def isPointInPoly(nvert, vertx, verty, testx, testy):
+    j = nvert-1
+    c = False
+    for i in range(nvert):
+	if  ((verty[i]>testy) != (verty[j]>testy)) and (testx < (vertx[j]-vertx[i]) * (testy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) :
+	    c = ~c;
+        j = i
+    return c
+
 
 ################################################################### find values
 
