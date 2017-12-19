@@ -76,6 +76,54 @@ def plotAllRegions(allmps, polyregion_all, prefix):
         plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.pdf', bbox_inches='tight')
         plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints.png', bbox_inches='tight')
 
+#
+
+def plotAllRegionsAxis(allmps, polyregion_all, prefix, beam_angle, intercept):
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111, aspect='equal')
+    ax1.add_patch(
+        patches.RegularPolygon(
+            (0, 0),      # (x,y)
+            6,           # number of vertices
+            const.radius,      # radius
+            fill = False
+        )
+    )
+    ax1.set_xlim(-200,200)
+    ax1.set_ylim(-200,200)
+    if const.plotaxis == 1: plotAxis()
+    allmps_e = allmps[0]
+    allmps_l = allmps[1]
+    if tog.plt_shading == 1:
+        for aa in range(len(allmps_e)):
+            ints_all = polyregion_all[aa]
+            ax1 = fig1.add_subplot(111, aspect='equal')
+            ax1.add_patch(patches.Polygon(ints_all, color=const.midcolor, alpha=const.hotshading, lw=0))
+            ax1.set_xlim(-200,200)
+            ax1.set_ylim(-200,200)
+    if tog.plt_lines == 1:
+        for aa in range(len(allmps_e)):
+            mp_e = allmps_e[aa]
+            mp_l = allmps_l[aa]
+            plt.plot([mp_e[0], mp_l[0]], [mp_e[1], mp_l[1]], const.midcolor, ls='-', lw=const.lw)
+    if tog.plt_dots == 1:
+        for aa in range(len(allmps_e)):
+            mp_e = allmps_e[aa]
+            mp_l = allmps_l[aa]
+            plotMPs(mp_e, mp_l)
+
+    b = intercept-math.tan(beam_angle)*(150)
+    y1 = math.tan(beam_angle)*(-150)+b
+    y2 = math.tan(beam_angle)*(150)+b
+    print 'axis',math.tan(beam_angle),b,y1,y2
+    plt.plot([-150,150],[y1,y2],linewidth=2.0)
+    
+    if tog.locallaptop == 1:
+        plt.savefig(prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints_axis.pdf', bbox_inches='tight')
+    else:
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints_axis.pdf', bbox_inches='tight')
+        plt.savefig('plots/'+sys.argv[1].replace('.root','').split('/')[-1]+'/limit'+str(tog.badarealimit)+'/'+prefix+str(tog.badarealimit)+'_'+str(tog.plt_dots)+str(tog.plt_lines)+str(tog.plt_shading)+'_midpoints_axis.png', bbox_inches='tight')
+
 ############################################################ find intersections
 
 def getAxisIntersection(wireplane, xx, yy):
