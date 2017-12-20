@@ -7,7 +7,7 @@ Created on Tue Dec  5 16:21:12 2017
 Description: constants & geometry & some visual options for wires.py
 """
 
-import math
+#import math
 
 ###############################################################################
 # constants & geometry
@@ -16,11 +16,15 @@ maxwires = 338 #this works for even numbers of wires only -- this describes the 
 
 radius = maxwires/2 + 1
 
-xaxis = [[ -1 * radius * math.cos(math.pi/6), radius * math.cos(math.pi/6)], [0, 0]]
-uaxis = [[-1 * radius * math.cos(math.pi/6)/2, radius * math.cos(math.pi/6)/2], [-1 * radius * (math.sin(math.pi/6) + 1)/2, radius * (math.sin(math.pi/6) + 1)/2]]
-vaxis = [[-1 * radius * math.cos(math.pi/6)/2, radius * math.cos(math.pi/6)/2], [radius * (math.sin(math.pi/6) + 1)/2, -1 * radius * (math.sin(math.pi/6) + 1)/2]]
+dd = 0.4330127019 #math.cos(math.pi/6)/2
+rr = 0.5 #math.sin(math.pi/6)
+
+xaxis = [[ -1 * radius * 2*dd, radius * 2*dd], [0, 0]]
+uaxis = [[-1 * radius * dd, radius * dd], [-1 * radius * (rr + 1)/2, radius * (rr + 1)/2]]
+vaxis = [[-1 * radius * dd, radius * dd], [radius * (rr + 1)/2, -1 * radius * (rr + 1)/2]]
 #axis = [xaxis, uaxis, vaxis]
 
+n_round = 10
 
 ###############################################################################
 # visuals
