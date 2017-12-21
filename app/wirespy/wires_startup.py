@@ -94,7 +94,7 @@ def getAllTrackInfo(n_events,ew,lw,subevent,ts,inf,pf):
         h_angle = ROOT.TH1F("h_angle","",100,-3.15,3.15)
     
     for w_e,w_l,se in zip(ew,lw,subevent):
-        newtrack = trackInfo(se, w_e, w_l, -666, -666, -666, -666, -666, -666, -666, -666, -666, -666, -666)
+        newtrack = trackInfo(se=se, w_e=w_e, w_l=w_l)
         wires_e = []    #list of wires associated with early hit
         wires_l = []    #list of wires associated with late hit
         

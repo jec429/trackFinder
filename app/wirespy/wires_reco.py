@@ -55,7 +55,7 @@ if tog.locallaptop == 0:
     for e in t:
         if e.GetListOfBranches().FindObject('first_area'):
             first_areas = e.first_areas
-            last_areas = e.first_areas
+            l7ast_areas = e.first_areas
         else:
             first_areas = [0 for x in e.beam]
             last_areas = [0 for x in e.beam]
@@ -101,7 +101,7 @@ def wiresRecon(n_events,ec,lc,subevent,ts,inf,pf):
     alltracks = allTrackInfo(ts, pf, inf, -1, n_events)
     func.writeAllTrackInfo_1(alltracks)
     
-    if tog.locallaptop == 0 and tog.plt_angles == 1:
+    if tog.locallaptop == 0:# and tog.plt_angles == 1:
         h_angle = ROOT.TH1F("h_angle","",100,-3.15,3.15)
         h_2D_track_length = ROOT.TH1F("h_2D_track_length","",100,0,300)
         h_3D_track_length = ROOT.TH1F("h_3D_track_length","",100,0,300)
@@ -109,7 +109,7 @@ def wiresRecon(n_events,ec,lc,subevent,ts,inf,pf):
         h_area_density_2 = ROOT.TH1F('h_area_density_2','',2,0,2)
     
     for c_e,c_l,se in zip(ec,lc,subevent):
-        newtrack = trackInfo(se, c_e, c_l, -666, -666, -666, -666, -666, -666, -666, -666, -666, -666, -666)
+        newtrack = trackInfo(se=se)
         
         x1 = const.radius*const.dd/250. * c_e[0]
         y1 = const.radius*const.dd/250. * c_e[1]

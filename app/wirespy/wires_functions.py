@@ -23,27 +23,34 @@ import wires_toggle as tog
 ###############################################################################
 
 class trackInfo:
-    def __init__(self, subevent, wireID_e, wireID_l, midpointORintersection_e, midpointORintersection_l, wirematchtype_e, wirematchtype_l, intersectioncoords_e, intersectioncoords_l, intersectionarea_e, intersectionarea_l, polygonarea, longesttracklength, trackangle, h_2D_track_length, h_3D_track_length, h_area_density_1, h_area_density_2):
-        self.se = subevent
-        self.w_e = wireID_e
-        self.w_l = wireID_l
-        self.mp_e = midpointORintersection_e
-        self.mp_l = midpointORintersection_l
-        self.mt_e = wirematchtype_e
-        self.mt_l = wirematchtype_l
-        self.ic_e = intersectioncoords_e
-        self.ic_l = intersectioncoords_l
-        self.ia_e = intersectionarea_e
-        self.ia_l = intersectionarea_l
-        self.pa = polygonarea
-        self.tl = longesttracklength
-        self.ang = trackangle
-        self.li = l_intercept
-        self.h2Dtl = h_2D_track_length
-        self.h3Dtl = h_3D_track_length
-        self.h_ad1 = h_area_density_1
-        self.h_ad2 = h_area_density_2
+    #def __init__(self, subevent, wireID_e, wireID_l, midpointORintersection_e, midpointORintersection_l, wirematchtype_e, wirematchtype_l, intersectioncoords_e, intersectioncoords_l, intersectionarea_e, intersectionarea_l, polygonarea, longesttracklength, trackangle, h_2D_track_length, h_3D_track_length, h_area_density_1, h_area_density_2):
+    def __init__(self, *args, **kwargs):
+        self.se = 0
+        self.w_e = 0
+        self.w_l = 0
+        self.mp_e = 0
+        self.mp_l = 0
+        self.mt_e = 0
+        self.mt_l = 0
+        self.ic_e = 0
+        self.ic_l = 0
+        self.ia_e = 0
+        self.ia_l = 0
+        self.pa = 0
+        self.tl = 0
+        self.ang = 0
+        self.li = 0 
+        self.h2Dtl = 0 
+        self.h3Dtl = 0 
+        self.h_ad1 = 0 
+        self.h_ad2 = 0
 
+        for key in kwargs:
+            for attr in dir(self):
+                if not callable(getattr(self, attr)) and not attr.startswith("__"):
+                    if key == attr:
+                        self.attr = kwargs[attr]
+        
 class allTrackInfo:
     def __init__(self, timestamp, prefix, inputfile, limit, num_events):
         self.ts = timestamp
