@@ -135,7 +135,118 @@ public:
 	t12.insert( t12.end(), t2.begin(), t2.end() );
 	return t12;
     }
+
+
+    std::vector<std::pair<double,double>> calculateEdges(double xw, double vw, double uw) {
+	double wn_x = xw + 4.5;
+	double wn_v = vw + 4.5;
+	double wn_u = uw + 4.5;
+
+	double xline = TMath::Cos(TMath::Pi()/6) * (wn_x - 170);
+
+	double zx0 = 170 * TMath::Cos(TMath::Pi()/6);
+	double zx1 = - 170 * TMath::Cos(TMath::Pi()/6);
+	double uy0 = wn_u - 255;
+	double uy1 = wn_u - 85;
+	double vy0 = 255 - wn_v;
+	double vy1 = 85 - wn_v;
 	    
+	double m_u = (uy1 - uy0) / (zx1 - zx0);
+	double m_v = (vy1 - vy0) / (zx1 - zx0);
+
+	double UV_x = (uy1 - m_u * zx1 - vy1 + m_v * zx1) / (m_v - m_u);
+	double UV_y = vy1 + m_v * (UV_x - zx1);
+	double XU_y = uy1 + m_u * (xline - zx1);
+	double XV_y = vy1 + m_v * (xline - zx1);
+
+	std::vector<std::pair<double,double>> edges;
+	double radius = 338/2+1;
+	double correction = radius*TMath::Cos(TMath::Pi()/6)/500.0;
+
+	edges.push_back(std::make_pair(UV_x/correction, UV_y/correction));
+	edges.push_back(std::make_pair(xline/correction, XU_y/correction));
+	edges.push_back(std::make_pair(xline/correction, XV_y/correction));
+	
+	return edges;
+	    
+    }
+    
+    std::pair<double,double> calculateCoordinates(std::vector<std::pair<double,double>> edges) {
+	
+	double corrected_X = (edges[0].first+edges[1].first+edges[2].first)/3.0;
+	double corrected_Y = (edges[0].second+edges[1].second+edges[2].second)/3.0;
+	return std::make_pair(corrected_X, corrected_Y);
+    }
+
+    double calculateArea(std::vector<std::pair<double,double>> edges) {
+	double area = 0.0;	
+	for (int i = 0; i<edges.size(); i++) {
+	    int j = (i + 1) % edges.size();
+	    area += edges[i].first * edges[j].second - edges[j].first * edges[i].second;
+	}
+	return area;
+    }
+
+    std::pair<double,double> calculateCoordinatesXV(double xw, double vw) {
+	double wn_1 = xw + 4.5;
+	double wn_2 = vw + 4.5;
+
+	double dd = TMath::Cos(TMath::Pi()/6)/2;
+	
+	double zx0 = 170 * 2*dd;
+	double zx1 = - 170 * 2*dd;
+	double xline = 2*dd * (wn_1 - 170);
+        double zy0 = 255 - wn_2;
+	double zy1 = 85 - wn_2;
+	double m_z = (zy1 - zy0) / (zx1 - zx0);
+	double XZ_y = zy1 + m_z * (xline - zx1);
+
+	double radius = 338/2+1;
+	double correction = radius*TMath::Cos(TMath::Pi()/6)/500.0;
+	
+	return std::make_pair(xline/correction,XZ_y/correction);
+	
+    }
+    
+    std::pair<double,double> calculateCoordinatesXU(double xw, double uw) {
+	double wn_1 = xw + 4.5;
+	double wn_2 = uw + 4.5;
+
+	double dd = TMath::Cos(TMath::Pi()/6)/2;
+	
+	double zx0 = 170 * 2*dd;
+	double zx1 = - 170 * 2*dd;
+	double xline = 2*dd * (wn_1 - 170);
+	double zy0 = wn_2 - 255;
+	double zy1 = wn_2 - 85;
+	double m_z = (zy1 - zy0) / (zx1 - zx0);
+	double XZ_y = zy1 + m_z * (xline - zx1);
+
+	return std::make_pair(xline/correction,XZ_y/correction);
+	
+    }
+    
+    std::pair<double,double> calculateCoordinatesUV(double uw, double vw) {
+	double wn_1 = uw + 4.5;
+	double wn_2 = vw + 4.5;
+
+	double dd = TMath::Cos(TMath::Pi()/6)/2;
+
+	double zx0 = 170 * 2*dd;
+	double zx1 = - 170 * 2*dd;
+	double uy0 = wn_1 - 255;
+	double uy1 = wn_1 - 85;
+	double vy0 = 255 - wn_2;
+	double vy1 = 85 - wn_2;
+	double m_u = (uy1 - uy0) / (zx1 - zx0);
+	double m_v = (vy1 - vy0) / (zx1 - zx0);
+	double UV_x = (uy1 - m_u * zx1 - vy1 + m_v * zx1) / (m_v - m_u);
+	double UV_y = vy1 + m_v * (UV_x - zx1);
+    
+	return std::make_pair(UV_x/correction,UV_y/correction);
+	
+    }
+    
     TTrackFinder()
     {
 	fBeam = false;
@@ -148,6 +259,13 @@ public:
 	last_hit_V.clear();
 	last_hit_U.clear();
 
+	first_hit_x.clear();
+	last_hit_x.clear();
+	first_hit_y.clear();
+	last_hit_y.clear();
+	first_area.clear();
+	last_area.clear();
+	
 	beam.clear();
     
 	hfile= new TFile("tracks.root","RECREATE");
@@ -158,6 +276,14 @@ public:
 	tree->Branch("last_hit_V",&last_hit_V);
 	tree->Branch("first_hit_U",&first_hit_U);
 	tree->Branch("last_hit_U",&last_hit_U);
+
+	tree->Branch("first_hit_x",&first_hit_x);
+	tree->Branch("last_hit_x",&last_hit_x);
+	tree->Branch("first_hit_y",&first_hit_y);
+	tree->Branch("last_hit_y",&last_hit_y);
+	tree->Branch("first_area",&first_area);
+	tree->Branch("last_area",&last_area);
+
 	tree->Branch("nmatches",&nmatches);
 	tree->Branch("nmatches2D",&nmatches2D);
 	tree->Branch("Event",&Event);
@@ -334,7 +460,8 @@ public:
 		wiresTimesCharges.push_back(std::make_tuple(wire,dTime,charge));	            
 	    }
 
-	    std::sort(wiresTimesCharges.begin(), wiresTimesCharges.end(), [] (wTuple const& a, wTuple const& b) { return std::get<0>(a) < std::get<0>(b); });
+	    std::sort(wiresTimesCharges.begin(), wiresTimesCharges.end(), [] (wTuple const& a, wTuple const& b) {
+		    return std::get<0>(a) < std::get<0>(b);});
     
 	    std::vector<std::vector<wTuple>> trackSeeds;
 	    std::vector<std::vector<wTuple>> tracks;
@@ -572,6 +699,9 @@ public:
 	    std::cout<<"tracks V 1.5="<<trackEdges[1].size() <<std::endl;
 	    std::cout<<"tracks U 1.5="<<trackEdges[2].size() <<std::endl;
 #endif
+#ifdef VVERBOSE
+	    std::cout<<"tracks deltaTX="<<std::get<1>(std::get<0>(tsx))-std::get<1>(std::get<1>(tsx))<<std::endl;
+#endif
 	    
 	    for (auto tsv:trackEdges[1]) {	
 #ifdef VVERBOSE
@@ -579,6 +709,7 @@ public:
 		    " "<<std::get<1>(std::get<1>(tsx))<<" "<<std::get<1>(std::get<1>(tsv))<<std::endl;
 
 		std::cout<<"deltasV="<<delta_xv_f<<" "<<delta_xv_l<<std::endl;
+		std::cout<<"tracks deltaTV="<<std::get<1>(std::get<0>(tsv))-std::get<1>(std::get<1>(tsv))<<std::endl;
 #endif	    
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsv))) < delta_xv_f ||
 		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsv))) < delta_xv_l		     
@@ -597,6 +728,7 @@ public:
 		    " "<<std::get<1>(std::get<1>(tsx))<<" "<<std::get<1>(std::get<1>(tsu))<<std::endl;
 
 		std::cout<<"deltasU="<<delta_xu_f<<" "<<delta_xu_l<<std::endl;
+		std::cout<<"tracks deltaTU="<<std::get<1>(std::get<0>(tsu))-std::get<1>(std::get<1>(tsu))<<std::endl;
 #endif	    
 		if ( fabs(std::get<1>(std::get<0>(tsx)) - std::get<1>(std::get<0>(tsu))) < delta_xu_f ||
 		     fabs(std::get<1>(std::get<1>(tsx)) - std::get<1>(std::get<1>(tsu))) < delta_xu_l
@@ -622,6 +754,17 @@ public:
 		last_hit_V.push_back(lhv);
 		last_hit_U.push_back(lhu);
 
+		std::vector<std::pair<double,double>> fedges = calculateEdges(fhx,fhv,fhu);
+		std::vector<std::pair<double,double>> ledges = calculateEdges(lhx,lhv,lhu);
+		std::pair<double,double> first_xy_position = calculateCoordinates(fedges);
+		std::pair<double,double> last_xy_position = calculateCoordinates(ledges);
+		first_hit_x.push_back(first_xy_position.first);
+		first_hit_y.push_back(first_xy_position.second);
+		last_hit_x.push_back(last_xy_position.first);
+		last_hit_y.push_back(last_xy_position.second);
+		first_area.push_back(calculateArea(fedges));
+		last_area.push_back(calculateArea(ledges));
+		
 		used_tracks_X.push_back(tsx);
 
 		trackEdges[1].erase(std::remove(trackEdges[1].begin(), trackEdges[1].end(), matched_track_V), trackEdges[1].end());
@@ -630,11 +773,9 @@ public:
 		if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
 		    beam.push_back(true);
 		else
-		    beam.push_back(false);
-	
+		    beam.push_back(false);	
 	    }
 	}
-
 	for (auto utx: used_tracks_X) {
 	    trackEdges[0].erase(std::remove(trackEdges[0].begin(), trackEdges[0].end(), utx), trackEdges[0].end());
 	}
@@ -669,6 +810,15 @@ public:
 		    last_hit_X.push_back(lhx);
 		    last_hit_V.push_back(lhv);
 		    last_hit_U.push_back(-999);
+		    std::pair<double,double> first_xy_position = calculateCoordinatesXV(fhx,fhv);
+		    std::pair<double,double> last_xy_position = calculateCoordinatesXV(lhx,lhv);
+		    first_hit_x.push_back(first_xy_position.first);
+		    first_hit_y.push_back(first_xy_position.second);
+		    last_hit_x.push_back(last_xy_position.first);
+		    last_hit_y.push_back(last_xy_position.second);
+		    first_area.push_back(0.0);
+		    last_area.push_back(0.0);
+
 
 		    if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
 			beam.push_back(true);
@@ -711,6 +861,15 @@ public:
 		    last_hit_X.push_back(lhx);
 		    last_hit_V.push_back(-999);
 		    last_hit_U.push_back(lhu);
+		    std::pair<double,double> first_xy_position = calculateCoordinatesXU(fhx,fhu);
+		    std::pair<double,double> last_xy_position = calculateCoordinatesXU(lhx,lhu);
+		    first_hit_x.push_back(first_xy_position.first);
+		    first_hit_y.push_back(first_xy_position.second);
+		    last_hit_x.push_back(last_xy_position.first);
+		    last_hit_y.push_back(last_xy_position.second);
+		    first_area.push_back(0.0);
+		    last_area.push_back(0.0);
+		    
 		    if (std::get<1>(std::get<0>(tsx)) > 0 && std::get<1>(std::get<0>(tsx)) < 2000)
 			beam.push_back(true);
 		    else
@@ -751,6 +910,15 @@ public:
 		    last_hit_X.push_back(-999);
 		    last_hit_V.push_back(lhv);
 		    last_hit_U.push_back(lhu);
+		    std::pair<double,double> first_xy_position = calculateCoordinatesXV(fhu,fhv);
+		    std::pair<double,double> last_xy_position = calculateCoordinatesXV(lhu,lhv);
+		    first_hit_x.push_back(first_xy_position.first);
+		    first_hit_y.push_back(first_xy_position.second);
+		    last_hit_x.push_back(last_xy_position.first);
+		    last_hit_y.push_back(last_xy_position.second);
+		    first_area.push_back(0.0);
+		    last_area.push_back(0.0);
+
 		    if (std::get<1>(std::get<0>(tsu)) > 0 && std::get<1>(std::get<0>(tsu)) < 2000)
 			beam.push_back(true);
 		    else
@@ -786,8 +954,16 @@ public:
 	last_hit_X.clear();
 	last_hit_V.clear();
 	last_hit_U.clear();
+
+	first_hit_x.clear();
+	last_hit_x.clear();
+	first_hit_y.clear();
+	last_hit_y.clear();
+	first_area.clear();
+	last_area.clear();
+
 	beam.clear();
-    
+	
 	return true;
     }
 
@@ -819,7 +995,15 @@ private:
     std::vector<double> last_hit_V;
     std::vector<double> first_hit_U;
     std::vector<double> last_hit_U;
-  
+
+    std::vector<double> first_hit_x;
+    std::vector<double> last_hit_x;
+    std::vector<double> first_hit_y;
+    std::vector<double> last_hit_y;
+    std::vector<double> first_area;
+    std::vector<double> last_area;
+
+    
 };
 int main(int argc, char **argv) {
     TTrackFinder userCode;
