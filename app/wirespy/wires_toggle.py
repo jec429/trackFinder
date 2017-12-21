@@ -13,7 +13,7 @@ plotEach = 0    #1=plot each individual track, 0=only plot visual heat maps
 
 #plot style options
 plt_lines = 1
-plt_shading = 0 #a lot slower than lines
+plt_shading = 1 #a lot slower than lines
 
 plt_angles = 0
 saveplotformat = 0 #0=png, 1=pdf, 2=both

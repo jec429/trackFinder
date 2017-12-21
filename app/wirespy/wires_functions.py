@@ -23,7 +23,7 @@ import wires_toggle as tog
 ###############################################################################
 
 class trackInfo:
-    def __init__(self, subevent, wireID_e, wireID_l, midpointORintersection_e, midpointORintersection_l, wirematchtype_e, wirematchtype_l, intersectioncoords_e, intersectioncoords_l, intersectionarea_e, intersectionarea_l, polygonarea, longesttracklength, trackangle):
+    def __init__(self, subevent, wireID_e, wireID_l, midpointORintersection_e, midpointORintersection_l, wirematchtype_e, wirematchtype_l, intersectioncoords_e, intersectioncoords_l, intersectionarea_e, intersectionarea_l, polygonarea, longesttracklength, trackangle, h_2D_track_length, h_3D_track_length, h_area_density_1, h_area_density_2):
         self.se = subevent
         self.w_e = wireID_e
         self.w_l = wireID_l
@@ -38,6 +38,11 @@ class trackInfo:
         self.pa = polygonarea
         self.tl = longesttracklength
         self.ang = trackangle
+        self.li = l_intercept
+        self.h2Dtl = h_2D_track_length
+        self.h3Dtl = h_3D_track_length
+        self.h_ad1 = h_area_density_1
+        self.h_ad2 = h_area_density_2
 
 class allTrackInfo:
     def __init__(self, timestamp, prefix, inputfile, limit, num_events):
@@ -60,6 +65,11 @@ class allTrackInfo:
         self.pa = []
         self.tl = []
         self.ang = []
+        self.li = []
+        self.h2Dtl = []
+        self.h3Dtl = []
+        self.h_ad1 = []
+        self.h_ad2 = []
         
     def add_track(self, trackInfo):
         self.se.append(trackInfo.se)
@@ -76,6 +86,11 @@ class allTrackInfo:
         self.pa.append(trackInfo.pa)
         self.tl.append(trackInfo.tl)
         self.ang.append(trackInfo.ang)
+        self.li.append(trackInfo.li)
+        self.h2Dtl.append(trackInfo.h2Dtl)
+        self.h3Dtl.append(trackInfo.h3Dtl)
+        self.h_ad1.append(trackInfo.h_ad1)
+        self.h_ad2.append(trackInfo.h_ad2)
 
     def print_basics(self):
         print("timestamp =\t" + str(self.ts))
@@ -147,10 +162,10 @@ def plotAllRegions(alltracks):
             ints_all = polyregions[aa]
             ax1.add_patch(patches.Polygon(ints_all, color=const.midcolor, alpha=const.hotshading, lw=0))
 
-    if tog.plt_lines == 1:
-        plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
-        plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
-        plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
+    #if tog.plt_lines == 1:
+        #plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
+        #plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
+        #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
     
     inf = alltracks.inf
     filename = 'plots/'+inf.replace('.root','').split('/')[-1]+'/'
@@ -166,8 +181,8 @@ def plotAllRegions(alltracks):
         plt.close()
     
     if tog.plt_shading == 1:
-        plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
-        plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
+        #plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
+        #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
         
         if tog.saveplotformat == 0 or tog.saveplotformat == 2:
             plt.savefig(filename + 'shading_midpoints'+'.png', bbox_inches='tight')
