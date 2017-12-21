@@ -55,7 +55,7 @@ if tog.locallaptop == 0:
     for e in t:
         if e.GetListOfBranches().FindObject('first_area'):
             first_areas = e.first_areas
-            l7ast_areas = e.first_areas
+            last_areas = e.first_areas
         else:
             first_areas = [0 for x in e.beam]
             last_areas = [0 for x in e.beam]
