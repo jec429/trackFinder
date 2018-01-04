@@ -22,7 +22,7 @@ else:
 from wires_functions import trackInfo, allTrackInfo
 
 import math
-
+from array import array
 
 
 ###############################################################################
@@ -100,13 +100,15 @@ func.writeWireID_list(timestamp, inputfile, ec_beam, lc_beam, subevent_beam, ec_
 def wiresRecon(n_events,ec,lc,subevent,ts,inf,pf):
     alltracks = allTrackInfo(ts, pf, inf, -1, n_events)
     func.writeAllTrackInfo_1(alltracks)
-    
+
+    x, y =  array( 'd' ), array( 'd' )
+
     if tog.locallaptop == 0:# and tog.plt_angles == 1:
         h_angle = ROOT.TH1F("h_angle","",100,-3.15,3.15)
         h_2D_track_length = ROOT.TH1F("h_2D_track_length","",100,0,300)
         h_3D_track_length = ROOT.TH1F("h_3D_track_length","",100,0,300)
         h_area_density_1 = ROOT.TH1F('h_area_density_1','',6,0,6)
-        h_area_density_2 = ROOT.TH1F('h_area_density_2','',2,0,2)
+        h_area_density_2 = ROOT.TH1F('h_area_density_2','',2,0,2)     
     
     for c_e,c_l,se in zip(ec,lc,subevent):
         newtrack = trackInfo(se=se)
@@ -118,6 +120,10 @@ def wiresRecon(n_events,ec,lc,subevent,ts,inf,pf):
         y2 = const.radius*const.dd/250. * c_l[1]
         z2 = const.radius*const.dd/250. * c_l[2]
 
+        if y1 < 50 and y1 > -100 and x1 > 0:
+            x.append(x1)
+            y.append(y1)
+        
         if x1 > 140 and x1 < 150:
             newtrack.li = y1
         
@@ -263,9 +269,12 @@ def wiresRecon(n_events,ec,lc,subevent,ts,inf,pf):
     #func.writeAllTrackInfo_3(alltracks, -1)
     
     func.writeTrackInfo(alltracks)
+    gr = ROOT.TGraph(len(x),x,y)
+    gr.Fit('pol1','FQ')
+    f1 = gr.GetFunction('pol1')
     if tog.plt_lines == 1 or tog.plt_shading == 1:
         func.plotAllRegions(alltracks)
-    
+        func.plotAllRegionsAxis_newFormat(alltracks,f1.GetParameter(1),f1.GetParameter(0))
     return alltracks
 
 #

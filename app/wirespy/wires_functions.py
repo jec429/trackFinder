@@ -169,10 +169,10 @@ def plotAllRegions(alltracks):
             ints_all = polyregions[aa]
             ax1.add_patch(patches.Polygon(ints_all, color=const.midcolor, alpha=const.hotshading, lw=0))
 
-    #if tog.plt_lines == 1:
-        #plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
-        #plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
-        #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
+    if tog.plt_lines == 1:
+        plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
+        plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
+        plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
     
     inf = alltracks.inf
     filename = 'plots/'+inf.replace('.root','').split('/')[-1]+'/'
@@ -188,8 +188,8 @@ def plotAllRegions(alltracks):
         plt.close()
     
     if tog.plt_shading == 1:
-        #plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
-        #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
+        plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
+        plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
         
         if tog.saveplotformat == 0 or tog.saveplotformat == 2:
             plt.savefig(filename + 'shading_midpoints'+'.png', bbox_inches='tight')
@@ -249,16 +249,15 @@ def plotAllRegionsAxis(allmps, polyregion_all, prefix, beam_angle, intercept):
 
 #
 
-def plotAllRegionsAxis_newFormat(alltracks, beam_angle, intercept):
+def plotAllRegionsAxis_newFormat(alltracks, slope, intercept):
     mps_e = np.array(alltracks.mp_e)
     mps_l = np.array(alltracks.mp_l)
     polyregions = alltracks.pa
     
-    b = intercept-math.tan(beam_angle)*(150)
-    y1 = math.tan(beam_angle)*(-150)+b
-    y2 = math.tan(beam_angle)*(150)+b
+    y1 = slope*(-150)+intercept
+    y2 = slope*(150)+intercept
     if tog.locallaptop == 0:
-        print('axis',math.tan(beam_angle),b,y1,y2)
+        print('axis',slope,intercept,y1,y2)
 
     if tog.plt_shading == 1:
         fig1 = plt.figure()    
@@ -296,9 +295,9 @@ def plotAllRegionsAxis_newFormat(alltracks, beam_angle, intercept):
             ax1.add_patch(patches.Polygon(ints_all, color=const.midcolor, alpha=const.hotshading, lw=0))
 
     if tog.plt_lines == 1:
-        plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
+        #plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
         plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
-        plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
+        #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
         plt.plot([-150,150],[y1,y2],linewidth=2.0)
     
     inf = alltracks.inf
