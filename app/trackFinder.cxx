@@ -221,6 +221,9 @@ public:
 	double zy1 = wn_2 - 85;
 	double m_z = (zy1 - zy0) / (zx1 - zx0);
 	double XZ_y = zy1 + m_z * (xline - zx1);
+	
+	double radius = 338/2+1;
+	double correction = radius*TMath::Cos(TMath::Pi()/6)/500.0;
 
 	return std::make_pair(xline/correction,XZ_y/correction);
 	
@@ -242,7 +245,10 @@ public:
 	double m_v = (vy1 - vy0) / (zx1 - zx0);
 	double UV_x = (uy1 - m_u * zx1 - vy1 + m_v * zx1) / (m_v - m_u);
 	double UV_y = vy1 + m_v * (UV_x - zx1);
-    
+
+    	double radius = 338/2+1;
+	double correction = radius*TMath::Cos(TMath::Pi()/6)/500.0;
+
 	return std::make_pair(UV_x/correction,UV_y/correction);
 	
     }
