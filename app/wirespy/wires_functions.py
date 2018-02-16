@@ -254,10 +254,10 @@ def plotAllRegionsAxis_newFormat(alltracks, slope, intercept):
     mps_l = np.array(alltracks.mp_l)
     polyregions = alltracks.pa
     
-    y1 = slope*(-150)+intercept
-    y2 = slope*(150)+intercept
+    ym = slope*(-150)+intercept
+    yp = slope*(150)+intercept
     if tog.locallaptop == 0:
-        print('axis',slope,intercept,y1,y2)
+        print('axis',slope,intercept,ym,yp)
 
     if tog.plt_shading == 1:
         fig1 = plt.figure()    
@@ -296,9 +296,18 @@ def plotAllRegionsAxis_newFormat(alltracks, slope, intercept):
 
     if tog.plt_lines == 1:
         #plt.plot([mps_e[:,0], mps_l[:,0]], [mps_e[:,1], mps_l[:,1]], const.midcolor, ls='-', lw=const.lw)
-        plt.plot(mps_e[:,0], mps_e[:,1], const.startcolor, marker='.', markersize=const.ms, lw=0)
+        ep_x = []
+        ep_y = []
+        for x1,y1,x2,y2 in zip(mps_e[:,0], mps_e[:,1], mps_l[:,0], mps_l[:,1]):
+            if 150-x1 < 150-x2:
+                ep_x.append(x1)
+                ep_y.append(y1)
+            else:
+                ep_x.append(x2)
+                ep_y.append(y2)
+        plt.plot(ep_x, ep_y, 'c', marker='.', markersize=const.ms, lw=0)
         #plt.plot(mps_l[:,0], mps_l[:,1], const.endcolor, marker='.', markersize=const.ms, lw=0)
-        plt.plot([-150,150],[y1,y2],linewidth=2.0)
+        plt.plot([-150,150],[ym,yp],linewidth=2.0)
     
     inf = alltracks.inf
     filename = 'plots/'+inf.replace('.root','').split('/')[-1]+'/'
@@ -323,6 +332,18 @@ def plotAllRegionsAxis_newFormat(alltracks, slope, intercept):
         if tog.saveplotformat == 1 or tog.saveplotformat == 2:
             plt.savefig(filename + 'shading_midpoints_axis'+'.pdf', bbox_inches='tight')
         plt.close()
+
+#
+
+def calculateNewCoordinates(alltracks, slope, intercept):
+    new_coords = []
+    for mp_e,mp_l in zip(alltracks.mp_e,alltracks.mp_l):
+        x_prime_e = mp_e[0]*math.cos(math.atan(slope))+(mp_e[1]-intercept)*math.sin(math.atan(slope))
+        y_prime_e = -1*mp_e[0]*math.sin(math.atan(slope))+(mp_e[1]-intercept)*math.cos(math.atan(slope))
+        x_prime_l = mp_l[0]*math.cos(math.atan(slope))+(mp_l[1]-intercept)*math.sin(math.atan(slope))
+        y_prime_l = -1*mp_l[0]*math.sin(math.atan(slope))+(mp_l[1]-intercept)*math.cos(math.atan(slope))
+        new_coords.append([x_prime_e,y_prime_e,x_prime_l,y_prime_l])
+    return new_coords
 
 #################################################################### create log
 
